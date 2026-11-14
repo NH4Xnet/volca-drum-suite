@@ -131,7 +131,7 @@ The panel and the sequencer need a small background helper to talk to each other
 | **Patterns** | 16 patterns, chain, fill pattern. **Regions = patterns**: name regions "P1 …", "P2 …" and the song switches patterns by itself (needs the listener). |
 | **Kit per pattern** | Each pattern can switch the panel to a saved kit. |
 | **Feel** | Global swing, CHAOS (one knob that loosens everything), DENSITY (thin out / fill up), EVOLVE (small changes every n bars). |
-| **Beat generator** | GEN styles fill the lanes with a starting groove: 24 styles from old EBM, futurepop and rhythm noise to house, breakbeat, DnB, trap, funk, bossa nova and swing. |
+| **Beat generator** | GEN styles fill the lanes with a starting groove: 28 styles from old EBM, futurepop and rhythm noise to house, breakbeat, DnB, trap, funk, bossa nova and swing. |
 | **Sync** | SYNC REAPER = locked to the project (loops, jumps, render). FREE = own play button and tempo. |
 | **Tap record** | Play the parts on MIDI channel 1-6 and the hits land on the nearest step. |
 
