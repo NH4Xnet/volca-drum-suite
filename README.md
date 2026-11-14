@@ -100,7 +100,7 @@ The panel and the sequencer need a small background helper to talk to each other
 **You are done.** To hear the volca through REAPER (if its audio comes back through your audio interface): add a second track, set its input to the volca's input, arm it and turn record monitoring on. Otherwise you hear it from its own output or your mixer.
 
 ### Step 6 · Set up the volca
-- **Split channel mode**, so part 1-6 listen on MIDI channel 1-6 (the Korg manual shows how).
+- **Split channel mode**, so part 1-6 listen on MIDI channel 1-6. It's the factory default. How to check it or switch it back: [Volca setup: split channel mode](#volca-setup-split-channel-mode). Korg manual: https://www.korg.com/us/support/download/product/0/809/
 - Recommended: the custom firmware **vdcf 1.22** by hj-oja: https://github.com/hj-oja/vdcf
   It adds FILT and CLIP (the purple rows in the panel) and makes velocity work like this: 63 = the panel's LEVEL, lower = ghost note, higher = accent. On the stock firmware everything else works.
 
@@ -170,8 +170,6 @@ Locks and morph snapshots are saved with the project, not in presets. Sound file
 ## Good to know
 - The volca has no MIDI out, so the panel only knows what it sent. If the volca was switched on late, press **SEND ALL**.
 - The panel sends at most 8 CCs per audio block, so a full kit dump doesn't choke the MIDI line.
-- Pitch quantize (QPI) is CC 53, found in the Synthmata volca drum editor.
-- The Sleeve look uses the free font **Big Shoulders Display** (Google Fonts) if it's installed; otherwise Bahnschrift Condensed.
 - For MIDI controllers: every control is a plugin parameter. Panel: Roll (slider 146) and Undo (147) act as buttons (send 1), Morph = slider 148.
 - Made and tested on Windows. macOS should work, but fonts will look different (not tested).
 
@@ -183,6 +181,18 @@ Locks and morph snapshots are saved with the project, not in presets. Sound file
 ## Other DAWs
 The **panel** should work in other DAWs through **ysfx** (free, loads JSFX as VST3 / AU / CLAP): https://github.com/JoepVanlier/ysfx/releases. Not tested by me. The **sequencer** and the actions need REAPER.
 
+## Volca setup: split channel mode
+The panel and the sequencer send every part on its own MIDI channel: part 1 on channel 1, part 2 on channel 2, up to part 6 on channel 6. That is the volca drum's factory default, so a new volca is already set up. If it was set to one channel for all parts, switch it back:
+
+1. Switch the volca **off**.
+2. Hold **REC** and switch it **on**. The 16 step buttons now stand for MIDI channels 1-16.
+3. Look at the LEDs under the step buttons:
+   - **One LED lit:** all parts listen on that one channel. Press **that step button**: the LED goes out and the volca is back to part 1-6 on channel 1-6.
+   - **No LED lit:** it's already in split channel mode.
+4. Switch the volca off and on again to play normally.
+
+Source: Korg volca drum Owner's Manual, section *Setting the MIDI channel*: https://www.korg.com/us/support/download/product/0/809/
+
 ## Changes
 - **Suite 1.0** (panel 2.0, sequencer 1.0): first release of the sequencer and the helper actions. Repository renamed from volca-drum-panel. Panel: AUTO SEND on project load, sound files (save / load / rename / delete), kit actions and kit names, works with the sequencer (p-locks, kit per pattern, LINK for locks), undo for kit load and morph, fixes.
 - Panel 1.5.2: Fix: switching Q off always brings the part back to its PITCH value.
@@ -192,4 +202,10 @@ The **panel** should work in other DAWs through **ysfx** (free, loads JSFX as VS
 - Panel 1.0: first release.
 
 ## License
-Free to use and change. If you share a changed version, please credit the original.
+**CC BY-NC-SA 4.0** (Creative Commons Attribution-NonCommercial-ShareAlike 4.0): https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+- **Free** to use, share and change, as long as it's not commercial.
+- **Credit** NH4X and link to this repository.
+- **Changed versions** you share must use the same license.
+- **Your music is yours.** Music you make with these tools can be released and sold however you like. The license only covers the code.
+- **Commercial use of the code** (selling it, bundling it in a paid product, building a paid product or service on it) needs a separate license from me. Open an issue on this repository and we'll talk.
