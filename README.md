@@ -6,11 +6,11 @@ By NH4X. Panel 2.0 · Sequencer 1.0. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Sequencer and Panel in REAPER](sequencer-preview.png)
 
-## Install (5 minutes, do it once)
+## Install (under 5 minutes, do it once)
 
 <p align="center">
   <a href="https://youtu.be/e6BRPumwCv8"><img src="install/video-thumbnail.png" width="640" alt="Install video on YouTube"></a>
-  <br><sub>Prefer video? The whole install in 4 minutes: https://youtu.be/e6BRPumwCv8</sub>
+  <br><sub>Prefer video? The whole install in under 5 minutes: https://youtu.be/e6BRPumwCv8</sub>
 </p>
 
 > [!IMPORTANT]
@@ -97,12 +97,12 @@ The panel and the sequencer need a small background helper to talk to each other
   <br><sub>Sequencer first, then panel · Done</sub>
 </p>
 
-**You are done.** To hear the volca through REAPER (if its audio comes back through your audio interface): add a second track, set its input to the volca's input, arm it and turn record monitoring on. Otherwise you hear it from its own output or your mixer.
-
 ### Step 6 · Set up the volca
 - **Split channel mode**, so part 1-6 listen on MIDI channel 1-6. It's the factory default. How to check it or switch it back: [Volca setup: split channel mode](#volca-setup-split-channel-mode). Korg manual: https://www.korg.com/us/support/download/product/0/809/
 - Recommended: the custom firmware **vdcf 1.22** by hj-oja: https://github.com/hj-oja/vdcf
   It adds FILT and CLIP (the purple rows in the panel) and makes velocity work like this: 63 = the panel's LEVEL, lower = ghost note, higher = accent. On the stock firmware everything else works.
+
+**You are done.** To hear the volca through REAPER (if its audio comes back through your audio interface): add a second track, set its input to the volca's input, arm it and turn record monitoring on. Otherwise you hear it from its own output or your mixer.
 
 ### Check it works
 1. In the panel, press **SEND ALL**. Then press the **play button** in a part header: the volca plays one hit.
@@ -151,7 +151,7 @@ The DUCK row picks lanes that also send a trigger (C1 on MIDI channel 10). Selec
 | Change a value | Drag or mouse wheel on the bar |
 | Default value | Double-click the bar |
 | Exact value | Hover the bar, type 0-127, Enter |
-| Select (SRC / MOD.T / EG.T) | Click a segment, drag, or mouse wheel. Each row changes only its own part of the Select CC (combination n = value × 45 / 128) |
+| Select (SRC / MOD.T / EG.T) | Click a segment, drag, or mouse wheel. Each row changes only its own part of the Select CC |
 | Select a part | Click its title (PART 01 … WAVEGUIDE) |
 | Copy / paste a part, sound files | **SOUND** button, or right-click a part title |
 | Save / load a kit | REAPER's preset menu at the top of the FX window, or the **Volca kit** actions |
@@ -169,7 +169,6 @@ Locks and morph snapshots are saved with the project, not in presets. Sound file
 
 ## Good to know
 - The volca has no MIDI out, so the panel only knows what it sent. If the volca was switched on late, press **SEND ALL**.
-- The panel sends at most 8 CCs per audio block, so a full kit dump doesn't choke the MIDI line.
 - For MIDI controllers: every control is a plugin parameter. Panel: Roll (slider 146) and Undo (147) act as buttons (send 1), Morph = slider 148.
 - Made and tested on Windows. macOS should work, but fonts will look different (not tested).
 
