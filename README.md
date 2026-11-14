@@ -8,6 +8,11 @@ By NH4X. Panel 2.0 · Sequencer 1.0. Music: https://nh4x.bandcamp.com/
 
 ## Install (5 minutes, do it once)
 
+<p align="center">
+  <a href="https://youtu.be/e6BRPumwCv8"><img src="install/video-thumbnail.png" width="640" alt="Install video on YouTube"></a>
+  <br><sub>Prefer video? The whole install in 4 minutes: https://youtu.be/e6BRPumwCv8</sub>
+</p>
+
 > [!IMPORTANT]
 > Do the steps in this order. Most "it doesn't work" problems come from step 5 (MIDI out, routing, FX order) or step 6 (volca channels).
 
