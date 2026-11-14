@@ -49,6 +49,11 @@ Installs the scripts too (Actions list: "Volca ...").]]></changelog>
         <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
         <changelog><![CDATA[First release.]]></changelog>
       </version>
+      <version name="1.0.1" author="NH4X" time="2026-11-14T23:32:00Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0.1/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
+        <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0.1/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
+        <changelog><![CDATA[Fix: pitch locks only on lanes with PIT on. On PIT-off lanes they are blocked and not sent, and the PITCH tab can't be painted there.]]></changelog>
+      </version>
     </reapack>
   </category>
 </index>

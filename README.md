@@ -2,7 +2,7 @@
 
 A free **step sequencer** and **editor panel** for the **Korg volca drum** inside REAPER, plus a few helper actions. Two JSFX plugins, no extra software.
 
-By NH4X. Panel 2.0 · Sequencer 1.0. Music: https://nh4x.bandcamp.com/
+By NH4X. Panel 2.0 · Sequencer 1.0.1. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Sequencer and Panel in REAPER](sequencer-preview.png)
 
@@ -193,6 +193,7 @@ The panel and the sequencer send every part on its own MIDI channel: part 1 on c
 Source: Korg volca drum Owner's Manual, section *Setting the MIDI channel*: https://www.korg.com/us/support/download/product/0/809/
 
 ## Changes
+- **Suite 1.0.1** (sequencer 1.0.1): Fix: pitch locks only on lanes with PIT on (blocked and not sent on PIT-off lanes, PITCH tab not paintable there).
 - **Suite 1.0** (panel 2.0, sequencer 1.0): first release of the sequencer and the helper actions. Repository renamed from volca-drum-panel. Panel: AUTO SEND on project load, sound files (save / load / rename / delete), kit actions and kit names, works with the sequencer (p-locks, kit per pattern, LINK for locks), undo for kit load and morph, fixes.
 - Panel 1.5.2: Fix: switching Q off always brings the part back to its PITCH value.
 - Panel 1.5.1: Classic look: part titles fit at any window size.

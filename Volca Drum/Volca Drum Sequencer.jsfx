@@ -1,5 +1,5 @@
 desc:Volca Drum Sequencer
-// VOLCA DRUM SEQUENCER 1.0 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
+// VOLCA DRUM SEQUENCER 1.0.1 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
@@ -421,8 +421,10 @@ function decide(p, ix, key, li) local(t, r) (
 // plv = lock value of slot k at step base b (linked layer param: L1 lock, else L2 lock); acpv = ACCENT amount the same way
 function lnk(p) ( p < 6 && gmem[1720 + p] >= 0.5; );
 function lks(p, k) ( lnk(p) && k < 14 ? k % 7 : k; );
-function plv(p, b, k) local(j, w) ( lnk(p) && k < 14 ? (j = k % 7; w = PL[b + j]; w < 0 ? (w = PL[b + j + 7];); w;) : PL[b + k]; );
-function acpv(p, k) local(j) ( lnk(p) && k < 14 ? (j = k % 7; ACP[j] != 0 ? ACP[j] : ACP[j + 7];) : ACP[k]; );
+// v1.0.1: L1/L2 PITCH locks + accent amounts are skipped on PIT lanes (QPI on: the note sets the pitch, a pitch CC leaves it off)
+function pqblk(p, k) ( (k == 4 || k == 11) && PON[p]; );
+function plv(p, b, k) local(j, w) ( pqblk(p, k) ? -1 : lnk(p) && k < 14 ? (j = k % 7; w = PL[b + j]; w < 0 ? (w = PL[b + j + 7];); w;) : PL[b + k]; );
+function acpv(p, k) local(j) ( pqblk(p, k) ? 0 : lnk(p) && k < 14 ? (j = k % 7; ACP[j] != 0 ? ACP[j] : ACP[j + 7];) : ACP[k]; );
 function pidx(p, k) ( k < 22 ? p * 22 + k + 1 : 133 + k - 22; );   // panel slider number
 function sendcc(o, si, v) ( addev(o, $xB0 | gmem[1400 + si], gmem[1200 + si], max(0, min(127, floor(v + 0.5)))); b_ncc += 1; );
 // before a lane's next hit: its locks go out, everything it locked before goes back to the panel value
@@ -1579,8 +1581,9 @@ function plkmenu() local(r, k) (
   loop(NPL,
     k == 0 ? strcat(#m, ">LAYER 1|") : k == 7 ? strcat(#m, ">LAYER 2|") : k == 14 ? strcat(#m, ">MIX|") : k == 22 ? strcat(#m, ">WAVEGUIDE|");
     (k == 6 || k == 13 || k == 21 || k == 25) ? strcat(#m, "<") : (k == plk ? strcat(#m, "!"););
+    pqblk(focus, k) ? strcat(#m, "#");   // v1.0.1: greyed on PIT lanes
     strcat(#m, pname(k));
-    (k == 4 || k == 11) && PON[focus] ? strcat(#m, "   (PIT on: use the PITCH tab)");   // v0.41.1
+    pqblk(focus, k) ? strcat(#m, "   (PIT on: use the PITCH tab)");   // v0.41.1
     k < NPL - 1 ? strcat(#m, "|");
     k += 1;
   );
@@ -1908,7 +1911,7 @@ function lrand(p, kind) local(n, i, ix, v, a, b) (
       : kind == 5 ? (v = floor(rand(6)); CHN[ix] = (v < 3 ? 100 : v == 3 ? 75 : v == 4 ? 50 : 25);)
       : kind == 6 ? (rand(1) < 0.25 ? (v = floor(rand(6)); SLC[ix] = (v == 0 ? 1 : v == 1 ? 2 : v == 2 ? 8 : v == 3 ? 15 : v == 4 ? 6 : 7);) : (SLC[ix] = 0;);)
       : kind == 7 ? (OFS[ix] = (floor(rand(5)) - 2) * 5;)
-      : kind == 8 ? (
+      : kind == 8 && !pqblk(p, plk) ? (
         a = (pnl ? gmem[1000 + pidx(p, plk)] : 64);
         PL[ix * NPL + plk] = max(0, min(127, a + floor(rand(81)) - 40)) + 128 * floor(max(0, PL[ix * NPL + plk]) / 128);
       );
@@ -2283,7 +2286,7 @@ function lrand2(p, what, a) local(n, i, ix, v, b) (
       : what == 3 ? (rand(1) < a * 0.5 ? (v = floor(rand(6)); SLC[ix] = (v == 0 ? 1 : v == 1 ? 2 : v == 2 ? 8 : v == 3 ? 15 : v == 4 ? 6 : 7);) : (SLC[ix] = 0;);)
       : what == 4 ? (OFS[ix] = floor((rand(2) - 1) * a * 4 + 0.5) * 5;)
       : what == 6 ? (PIT[ix] = max(-24, min(24, floor((rand(2) - 1) * 12 * a + 0.5)));)   // amount 100 % = +/- one octave
-      : (b = (pnl ? gmem[1000 + pidx(p, plk)] : 64); PL[ix * NPL + plk] = max(0, min(127, floor(b + (rand(2) - 1) * 60 * a))) + 128 * floor(max(0, PL[ix * NPL + plk]) / 128);); 
+      : !pqblk(p, plk) ? (b = (pnl ? gmem[1000 + pidx(p, plk)] : 64); PL[ix * NPL + plk] = max(0, min(127, floor(b + (rand(2) - 1) * 60 * a))) + 128 * floor(max(0, PL[ix * NPL + plk]) / 128);); 
     );
     i += 1;
   );
@@ -2614,9 +2617,13 @@ function tabval(p) local(t) (
   floor((t * 2 - 1) * 8 + 0.5) * 5;
 );
 // paint the tab value onto every lit step the mouse passes (gap-filled, stays in the lane it started in)
-function tpaint() local(k, kk, kend, s, ix, v, nv, lw) (
+function tpaint() local(k, kk, kend, s, ix, v, nv, lw, nop) (
   k = colat();
-  k >= 0 ? (
+  // v1.0.1: no pitch locks on PIT lanes, no semitones on PIT-off lanes (Alt = remove / 0 still works)
+  nop = !alt && ((tab == 5 && pqblk(dlane, plk)) || (tab == 6 && !PON[dlane]));
+  nop ? (tab == 5 ? sprintf(#rd, "PART %d PIT ON · no pitch locks, use the PITCH tab", dlane + 1)
+                  : sprintf(#rd, "PART %d PIT OFF · switch PIT on in the lane first", dlane + 1); msgt = now;);
+  k >= 0 && !nop ? (
     dlastk < 0 ? (dlastk = k;);
     kk = min(dlastk, k); kend = max(dlastk, k); v = tabval(dlane);
     loop(kend - kk + 1,
@@ -3226,7 +3233,7 @@ gfx_gradrect(0, 0, gfx_w, gfx_h, bg_r, bg_g, bg_b, 1, 0, 0, 0, 0, (gfx_r - bg_r)
 // ---- title + theme ----
 gfx_setfont(1, "Bahnschrift", CF(S(26)), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(6));
 gfx_setfont(3, "Bahnschrift", CF(S(13)), 'b'); rc(K_ACC, 1); txt("S E Q U E N C E R", MG + S(1), MG + S(36));
-gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.0 · classic", MG + S(1), MG + S(54));   // bump on every change
+gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.0.1 · classic", MG + S(1), MG + S(54));   // bump on every change
 
 // ---- readout ----
 rc(K_RDB, 1); gfx_rect(RDX, MG, RDW, HDH);
@@ -3378,7 +3385,7 @@ tab == 5 ? (
 (tab > 0 && tab < 5) || tab == 6 ? (
   gfx_setfont(3, "Bahnschrift", CF(S(10)), 'b');
   tab == 6 && !PON[focus] ? (
-    rc(K_HOT, 1); sprintf(#t, "PART %d PIT OFF: semitones not played · turn PIT on", focus + 1);
+    rc(K_HOT, 1); sprintf(#t, "PART %d PIT OFF · turn PIT on to paint", focus + 1);
     txt(fit(#t, PARW - S(6)), PARX + S(6), TBY + (TBH - S(10)) / 2);
   ) : (
     rc(K_DIM, 1); txt(fit(tab == 6 ? "height = semitones · Alt = 0" : "height = value · Alt = reset", PARW - S(6)), PARX + S(6), TBY + (TBH - S(10)) / 2);
@@ -3683,7 +3690,7 @@ skin ? (
   rc(K_BG2, 1);
   gfx_setfont(1, #sf, S(36), 'b'); txt("VOLCA", S(16), HDY + S(4)); txt("DRUM", S(16), HDY + S(34));
   sfont(3, S(14)); slcur_ = 0; txt("S E Q U E N C E R", S(17), HDY + S(68));
-  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.0 · sleeve", S(17), HDY + S(86));   // bump on every change
+  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.0.1 · sleeve", S(17), HDY + S(86));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch in the title block, like Classic; hover = name in the status
   rc(K_BG2, lkhit ? 1 : 0.75); frame2(LKX, THY, LKW, THH, S(2)); gfx_rect(LKX + S(4), THY + S(4), (LKW - S(8)) / 2, THH - S(8));
   rc(K_BG2, 1); gfx_rect(THX, THY, THW, THH); rc(K_ACC, 1); gfx_rect(THX + S(3), THY + S(3), THW - S(6), THH - S(6));
