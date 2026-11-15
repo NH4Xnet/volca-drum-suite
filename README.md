@@ -6,6 +6,17 @@ By NH4X. Panel 2.0 · Sequencer 1.0.1. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Sequencer and Panel in REAPER](sequencer-preview.png)
 
+## Contents
+1. [Install](#install-under-5-minutes-do-it-once): [ReaPack](#step-1--install-reapack) · [repository](#step-2--add-this-repository) · [plugins](#step-3--install-the-two-plugins) · [listener](#step-4--start-the-listener-once) · [track](#step-5--set-up-the-track) · [volca](#step-6--set-up-the-volca) · [check it works](#check-it-works)
+2. [What's in it](#whats-in-it)
+3. [The sequencer](#the-sequencer): [how to use it](#how-to-use-it) · [duck trigger](#duck-trigger)
+4. [The panel](#the-panel)
+5. [Good to know](#good-to-know): [known limits](#known-limits)
+6. [Other DAWs](#other-daws)
+7. [Volca setup: split channel mode](#volca-setup-split-channel-mode)
+8. [Changes](#changes)
+9. [License](#license)
+
 ## Install (under 5 minutes, do it once)
 
 <p align="center">
