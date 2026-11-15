@@ -7,15 +7,46 @@ By NH4X. Panel 2.0 · Sequencer 1.0.1. Music: https://nh4x.bandcamp.com/
 ![Volca Drum Sequencer and Panel in REAPER](sequencer-preview.png)
 
 ## Contents
-1. [Install](#install-under-5-minutes-do-it-once): [ReaPack](#step-1--install-reapack) · [repository](#step-2--add-this-repository) · [plugins](#step-3--install-the-two-plugins) · [listener](#step-4--start-the-listener-once) · [track](#step-5--set-up-the-track) · [volca](#step-6--set-up-the-volca) · [check it works](#check-it-works)
-2. [What's in it](#whats-in-it)
-3. [The sequencer](#the-sequencer): [how to use it](#how-to-use-it) · [duck trigger](#duck-trigger)
-4. [The panel](#the-panel)
-5. [Good to know](#good-to-know): [known limits](#known-limits)
-6. [Other DAWs](#other-daws)
-7. [Volca setup: split channel mode](#volca-setup-split-channel-mode)
-8. [Changes](#changes)
-9. [License](#license)
+
+<table>
+<tr>
+<th align="left" width="33%">Get started</th>
+<th align="left" width="33%">Use it</th>
+<th align="left" width="33%">Reference</th>
+</tr>
+<tr>
+<td valign="top">
+
+1. [Install ReaPack](#step-1--install-reapack)
+2. [Add this repository](#step-2--add-this-repository)
+3. [Install the plugins](#step-3--install-the-two-plugins)
+4. [Start the listener](#step-4--start-the-listener-once)
+5. [Set up the track](#step-5--set-up-the-track)
+6. [Set up the volca](#step-6--set-up-the-volca)
+7. [Check it works](#check-it-works)
+
+</td>
+<td valign="top">
+
+- [What's in it](#whats-in-it)
+- [The sequencer](#the-sequencer)
+  - [How to use it](#how-to-use-it)
+  - [Duck trigger](#duck-trigger)
+- [The panel](#the-panel)
+
+</td>
+<td valign="top">
+
+- [Good to know](#good-to-know)
+  - [Known limits](#known-limits)
+- [Other DAWs](#other-daws)
+- [Split channel mode](#volca-setup-split-channel-mode)
+- [Changes](#changes)
+- [License](#license)
+
+</td>
+</tr>
+</table>
 
 ## Install (under 5 minutes, do it once)
 
