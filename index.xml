@@ -50,6 +50,20 @@ Installs the scripts too (Actions list: "Volca ...").]]></changelog>
         <changelog><![CDATA[Values in real units, measured on a volca drum: LEVEL in dB, ATTACK / RELEASE in ms, PITCH in Hz + nearest note and cents (sine / saw; Q on shows QPI), rise-fall MOD / RATE as sweep in semitones / ms. Cells show the number with a small unit, the display the long form. Noise pitch, OSC / RND mod and the mix rows stay 0-127.
 Sleeve look: Q and LINK stay visible when on in the selected part.]]></changelog>
       </version>
+      <version name="2.5" author="NH4X" time="2026-11-15T21:18:12Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20Drum%20Panel.jsfx</source>
+        <source file="Volca listener (start).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20listener%20%28start%29.lua</source>
+        <source file="Volca sound (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20sound%20%28save%29.lua</source>
+        <source file="Volca sound (load).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20sound%20%28load%29.lua</source>
+        <source file="Volca kit (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20kit%20%28save%29.lua</source>
+        <source file="Volca kit (kit +).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20kit%20%28kit%20%2B%29.lua</source>
+        <source file="Volca kit (kit -).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20kit%20%28kit%20-%29.lua</source>
+        <source file="Volca kit (send all).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20kit%20%28send%20all%29.lua</source>
+        <changelog><![CDATA[SMART roll: RANDOM now has a kind (KICK, SNARE, CLAP, HAT, METAL, PERC, BASS, MICRO, MIX) and SMART / WILD. SMART rolls a sound of that kind inside its useful ranges (measured on a volca drum); MIX on KIT rolls a whole drum kit; low AMOUNT stays close to the current sound. WILD = the old full-range roll. Two new parameters: Rnd Mode, Rnd Kind.
+SOUND menu: sounds that share their first word are grouped in submenus (also in the Volca sound actions).
+Alt+click = default on every bar, AMOUNT and MORPH (double-click still works).
+ATTACK / RELEASE times no longer show "~": all EG types have the same length.]]></changelog>
+      </version>
     </reapack>
     <reapack name="Volca Drum Sequencer.jsfx" type="effect" desc="Volca Drum Sequencer (step sequencer for the Korg volca drum)">
       <metadata>
@@ -70,6 +84,14 @@ Sleeve look: Q and LINK stay visible when on in the selected part.]]></changelog
         <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
         <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
         <changelog><![CDATA[P-lock cells, the paint display and the step menu show LEVEL, ATTACK, RELEASE, PITCH, MOD and RATE locks in real units (dB, ms, note / Hz, semitones), like the panel. Needs the panel 2.1+ on the track.]]></changelog>
+      </version>
+      <version name="1.1.4" author="NH4X" time="2026-11-15T21:18:12Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
+        <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.2/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
+        <changelog><![CDATA[Right-click lists on HUMANIZE, EUCLID HITS, GEN AMOUNT, INTENSITY, ACCENT amount, BPM, the length strip and the P-LOCK parameter field.
+Alt+click = default on GEN AMOUNT / WHAT, EVOLVE CHANGES, BPM and the length strip; double-click INTENSITY = 50 %. CAL: right-click opens a menu (no silent reset), Alt+click = 0 ms.
+Fix: Alt+click on a step sets the lane length only in STEPS; in the value tabs Alt paints the default again.
+ATTACK / RELEASE locks no longer show "~".]]></changelog>
       </version>
     </reapack>
   </category>

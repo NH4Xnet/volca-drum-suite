@@ -2,7 +2,7 @@
 
 A free **step sequencer** and **editor panel** for the **Korg volca drum** inside REAPER, plus a few helper actions. Two JSFX plugins, no extra software.
 
-By NH4X. Panel 2.1.3 · Sequencer 1.1.1. Music: https://nh4x.bandcamp.com/
+By NH4X. Panel 2.5 · Sequencer 1.1.4. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Sequencer and Panel in REAPER](sequencer-preview.png)
 
@@ -219,7 +219,7 @@ The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI
 | Action | How |
 |---|---|
 | Change a value | Drag or mouse wheel on the bar |
-| Default value | Double-click the bar |
+| Default value | Double-click or Alt+click the bar |
 | Read a value | Layer rows show real units: dB, ms, Hz + note (`G#1`), sweep in st / ms. Measured on a volca drum, so roughly right; noise pitch, OSC / RND mod and the mix rows stay 0-127 |
 | Exact value | Hover the bar, type 0-127 (the CC value), Enter |
 | Select (SRC / MOD.T / EG.T) | Click a segment, drag, or mouse wheel. Each row changes only its own part of the Select CC |
@@ -227,7 +227,7 @@ The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI
 | Copy / paste a part, sound files | **SOUND** button, or right-click a part title |
 | Save / load a kit | REAPER's preset menu at the top of the FX window, or the **Volca kit** actions |
 | Send everything | **SEND ALL**. **AUTO SEND** (on by default) does it once after a project load |
-| Randomize | Pick target and amount in RANDOM, press **ROLL**. **UNDO** takes back the last roll, paste, kit load or morph (press again = redo) |
+| Randomize | In RANDOM pick the target (PART / L1 / L2 / KIT), a kind and the amount, press **ROLL**. **SMART** rolls a sound of that kind (KICK … MICRO) inside its useful ranges; **MIX** on KIT rolls a whole drum kit, on a part one random kind. Low amount stays close to the current sound. **WILD** rolls anything, full range. Locked cells are skipped. **UNDO** takes back the last roll, paste, kit load or morph (press again = redo) |
 | Lock a cell / row / part | Right-click the bar / click the row name (right-click = all parts) / Shift+click the part title |
 | Morph | **SET A**, change or load a kit, **SET B**, then move the MORPH bar |
 | Test hit / pitch quantize | Play button / **Q** in the part header |
@@ -264,6 +264,7 @@ The panel and the sequencer send every part on its own MIDI channel: part 1 on c
 Source: Korg volca drum Owner's Manual, section *Setting the MIDI channel*: https://www.korg.com/us/support/download/product/0/809/
 
 ## Changes
+- **Suite 1.2** (panel 2.5, sequencer 1.1.4): panel: SMART roll (pick a kind: KICK, SNARE, CLAP, HAT, METAL, PERC, BASS, MICRO, MIX; rolls stay inside useful ranges, MIX on KIT = a drum kit; WILD = the old full-range roll), SOUND menu grouped by first word, Alt+click = default. Sequencer: right-click value lists (humanize, Euclid hits, GEN amount, intensity, accent, BPM, length strip, p-lock parameter), more Alt+click defaults, CAL right-click is a menu. Fix: Alt+click on a step sets the lane length only in STEPS.
 - **Suite 1.1** (panel 2.1.3, sequencer 1.1.1): values in real units, measured on a volca drum: LEVEL in dB, ATTACK / RELEASE in ms, PITCH in Hz + nearest note and cents (sine / saw; Q on shows QPI), rise-fall MOD / RATE as sweep in semitones / ms. Same units on the sequencer's p-lock cells. Sleeve: Q and LINK stay visible when on in the selected part.
 - **Suite 1.0.1** (sequencer 1.0.1): Fix: pitch locks only on lanes with PIT on (blocked and not sent on PIT-off lanes, PITCH tab not paintable there).
 - **Suite 1.0** (panel 2.0, sequencer 1.0): first release of the sequencer and the helper actions. Repository renamed from volca-drum-panel. Panel: AUTO SEND on project load, sound files (save / load / rename / delete), kit actions and kit names, works with the sequencer (p-locks, kit per pattern, LINK for locks), undo for kit load and morph, fixes.

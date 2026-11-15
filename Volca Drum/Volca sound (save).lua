@@ -1,6 +1,6 @@
 -- @description Volca sound (save / load)
 -- @author NH4X
--- @version 1.0
+-- @version 1.1
 -- @about
 --   Volca Drum sounds = one part of the JSFX "Volca Drum Panel" (22 values: L1, L2, Pan..Clip).
 --   What it does comes from the file name: (save), (load). The two files are identical.
@@ -71,17 +71,53 @@ local function write_index()
   f:close()
 end
 
+-- menu at the mouse, grouped like the panel's SOUND menu: names sharing their first word ("Kick Horgan A1") go into
+-- a submenu named after it (item = rest of the name), words used once into "More" (flat when there are no groups).
+-- Submenu headers (">") are not counted by gfx.showmenu. Returns the picked name or nil.
+local function grouped_menu(title, names)
+  local order, groups = {}, {}
+  for _, n in ipairs(names) do
+    local w = n:match("^(%S+)%s") or n
+    local key = w:lower()
+    if not groups[key] then groups[key] = { word = w, items = {} }; order[#order + 1] = key end
+    local it = groups[key].items; it[#it + 1] = n
+  end
+  local function esc(s) if s:match("^[#!<>]") then return " " .. s end return s end
+  local singles, ngroups = {}, 0
+  for _, k in ipairs(order) do
+    if #groups[k].items >= 2 then ngroups = ngroups + 1 else singles[#singles + 1] = groups[k].items[1] end
+  end
+  local menu, map = { "#" .. title, "" }, {}   -- "" = separator (not counted)
+  for _, k in ipairs(order) do
+    local g = groups[k]
+    if #g.items >= 2 then
+      menu[#menu + 1] = ">" .. g.word
+      for i, n in ipairs(g.items) do
+        local rest = n:sub(#g.word + 2); if rest == "" then rest = n end
+        menu[#menu + 1] = (i == #g.items and "<" or "") .. esc(rest); map[#map + 1] = n
+      end
+    end
+  end
+  if #singles > 0 then
+    if ngroups > 0 then menu[#menu + 1] = ">More" end
+    for i, n in ipairs(singles) do
+      menu[#menu + 1] = ((ngroups > 0 and i == #singles) and "<" or "") .. esc(n); map[#map + 1] = n
+    end
+  end
+  local x, y = reaper.GetMousePosition()
+  gfx.init("Volca sound", 0, 0, 0, x, y)
+  gfx.x, gfx.y = 0, 0
+  local sel = gfx.showmenu(table.concat(menu, "|"))
+  gfx.quit()
+  if sel < 2 then return end   -- 0 = cancelled, 1 = title
+  return map[sel - 1]
+end
+
 -- menu at the mouse with all sounds; returns the picked name or nil
 local function pick_sound(title)
   local names = list_sounds()
   if #names == 0 then notify(6, "SOUNDS · NONE SAVED YET") return end
-  local x, y = reaper.GetMousePosition()
-  gfx.init("Volca sound", 0, 0, 0, x, y)
-  gfx.x, gfx.y = 0, 0
-  local sel = gfx.showmenu("#" .. title .. "||" .. table.concat(names, "|"))
-  gfx.quit()
-  if sel < 2 then return end   -- 0 = cancelled, 1 = title
-  return names[sel - 1]
+  return grouped_menu(title, names)
 end
 
 local function clean_name(name)
@@ -163,13 +199,8 @@ local function run(what)
     local names = list_sounds()
     write_index()
     if #names == 0 then notify(6, "SOUNDS · NONE SAVED YET") return end
-    local x, y = reaper.GetMousePosition()
-    gfx.init("Volca sound", 0, 0, 0, x, y)
-    gfx.x, gfx.y = 0, 0
-    local sel = gfx.showmenu("#LOAD INTO PART " .. (part + 1) .. "||" .. table.concat(names, "|"))
-    gfx.quit()
-    if sel < 2 then return end   -- 0 = cancelled, 1 = title
-    local name = names[sel - 1]
+    local name = grouped_menu("LOAD INTO PART " .. (part + 1), names)
+    if not name then return end
     local f = io.open(DIR .. "/" .. name .. ".txt", "r")
     if not f then return end
     local text = f:read("*a") f:close()

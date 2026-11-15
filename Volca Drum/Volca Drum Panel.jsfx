@@ -1,5 +1,5 @@
 desc:Volca Drum Panel
-// VOLCA DRUM PANEL 2.1.3 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// VOLCA DRUM PANEL 2.5 by NH4X - editor + display for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
@@ -13,7 +13,7 @@ desc:Volca Drum Panel
 //  5. Run the action "Volca listener (start)" once and answer Yes (sound SAVE / RENAME / DELETE need it).
 //
 // USE
-//  - Drag or mouse wheel = change, double-click = default, hover + type 0-127 + Enter = exact value.
+//  - Drag or mouse wheel = change, double-click or Alt+click = default, hover + type 0-127 + Enter = exact value.
 //    Rest the mouse 1 s on a button = what it does (in the display).
 //  - SELECT is shown as three rows: SRC (source), MOD.T (modulation type), EG.T (envelope type).
 //    Each row changes only its own part. Still one Select CC underneath (n = value x 45 / 128).
@@ -25,7 +25,9 @@ desc:Volca Drum Panel
 //    Play button = one test hit on that part. Q = pitch quantize (QPI, CC 53) for that part.
 //  - SOUND (or right-click a part title): copy / paste a part, LOAD a sound file; SAVE / RENAME / DELETE need the listener.
 //    Sound files: REAPER resource folder / Data / NH4X Volca / VolcaSounds (shared by all projects).
-//  - RANDOM: target (part / layer / kit), amount, ROLL, UNDO (also undoes a paste; press again = redo).
+//  - RANDOM: target (part / L1 / L2 / kit), kind, amount, ROLL, UNDO (also undoes a paste; press again = redo).
+//    SMART rolls a sound of the chosen kind (KICK ... MICRO, MIX = a drum kit on KIT) inside its useful ranges,
+//    WILD rolls anything, full range. Low amount = stay close to the current sound.
 //    Locks (amber) are skipped by every roll: right-click (or Shift+click) a bar = one cell,
 //    click a row name = that row in this part, right-click a row name = that row in all parts,
 //    Shift+click a part title = whole part. Locks are saved with the project, not in presets.
@@ -204,6 +206,8 @@ slider154:0<0,1,1{off,on}>-P4 QPI (CC 53)
 slider155:0<0,1,1{off,on}>-P5 QPI (CC 53)
 slider156:0<0,1,1{off,on}>-P6 QPI (CC 53)
 slider157:1<0,1,1{off,on}>-Auto send on load
+slider158:0<0,1,1{Smart,Wild}>-Rnd Mode
+slider159:0<0,8,1{Kick,Snare,Clap,Hat,Metal,Perc,Bass,Micro,Mix}>-Rnd Kind
 
 @init
 ext_noinit = 1;
@@ -335,7 +339,7 @@ function compshort(c, x, s) (
 
 // ---- real units (2026-11-15): measured on the Volca (vdcf 1.22), part 1 layer 1 SINE, LIN EG, RISE-FALL mod
 // (test recordings of a sine at many CC values). Values between the measured points are interpolated
-// (pitch + times on a log scale). Other EG / MOD types: the times get a "~", OSC / RND mod and noise pitch stay numbers.
+// (pitch + times on a log scale). Saw pitch = sine pitch. OSC / RND mod and noise pitch stay numbers.
 function unpc(i) ( i == 0 ? 0 : i == 1 ? 4 : i == 2 ? 8 : i == 3 ? 10 : i == 4 ? 11 : i == 5 ? 12 : i == 6 ? 14 : i == 7 ? 16 :
   i == 8 ? 20 : i == 9 ? 24 : i == 35 ? 127 : 28 + (i - 10) * 4; );
 function unph(i) ( i == 0 ? 20.00 : i == 1 ? 24.41 : i == 2 ? 37.64 : i == 3 ? 47 : i == 4 ? 53 : i == 5 ? 59.69 : i == 6 ? 74 :
@@ -383,7 +387,7 @@ function unfmt(k, v, sl, ov, q, ulg, s) local(n, src, mdt, eg, hz, m, c, a, t, r
 (
   n = floor(max(0, min(127, floor(sl + 0.5))) * 45 / 128); src = floor(n / 9); mdt = floor(n / 3) % 3; eg = n % 3;
   v = max(0, min(127, floor(v + 0.5))); ov = max(0, min(127, floor(ov + 0.5)));
-  strcpy(#unx, eg > 0 && ulg >= 0 ? "~" : "");   // times measured with LIN EG
+  strcpy(#unx, "");   // v2.2: no "~": LIN / EXP / MULTI have the same length (run 3), only the curve differs
   strcpy(#unu, "");   // ulg -1: the unit that goes after the number (small)
   r = 1;
   k == 1 ? (
@@ -545,23 +549,272 @@ function snapundo(tag) local(i) (
   i = 1; loop(NS, ub[i] = clampv(slider(i)); i += 1;);
   undo_ok = 1; undone = 0; strcpy(#ul, tag);
 );
+// ---- SMART roll (v2.5): musical sounds inside the measured ranges (calibration runs 1-5, FM ON on all parts) ----
+// slider 158 = mode (0 SMART, 1 WILD = the full-range roll above), slider 159 = kind 0-8 (8 = MIX).
+// A kind = 1-4 recipes (sound families); a roll picks one and writes every unlocked cell inside the recipe's range.
+// Amount: 100 % = a fresh sound; lower = blend from the current value toward a random in-range value, then clamped into
+// the range (so the sound always ends up inside the kind). Below 50 % Amount, with a locked L1 Select or with target L2,
+// the recipe whose L1 source + mod type fits the current L1 is used (the sound family stays).
+// Select: src 0 SINE 1 SAW 2 HP NOISE 3 LP NOISE 4 BP NOISE · mod 0 RISE-FALL 1 OSCILLATE (= FM with FM ON) 2 RANDOM ·
+// eg 0 LIN 1 EXP 2 MULTI, -1 = EXP or LIN. Noise PIT = filter. Memory: FMR 9200-9327, KC 9400-9471, kgx/kgy 9100/9110.
+function kname(k) ( k==0 ? "KICK" : k==1 ? "SNARE" : k==2 ? "CLAP" : k==3 ? "HAT" : k==4 ? "METAL" : k==5 ? "PERC" : k==6 ? "BASS" : k==7 ? "MICRO" : "MIX" );
+function rname(k, r) (
+  k==0 ? (r==0 ? "PUNCH" : "ROUND") : k==1 ? (r==0 ? "BODY" : "INDUSTRIAL") : k==2 ? "MULTI" :
+  k==3 ? (r==0 ? "NOISE" : "FM") : k==4 ? (r==0 ? "FM CLANG" : "FOLD CLANG") :
+  k==5 ? (r==0 ? "TOM" : r==1 ? "RIM" : r==2 ? "COWBELL" : "BELL") : k==6 ? (r==0 ? "FM" : "SAW") :
+  (r==0 ? "BLIP" : r==1 ? "ZAP" : r==2 ? "TICK" : "PING")
+);
+// FM RATE lists (run 4/5 ratio table): list n at FMR + n * 32 = [pairs, lo1, hi1, lo2, hi2 ...]
+FMR = 9200; KC = 9400; kgx = 9100; kgy = 9110;
+function fpair(n, lo, hi) local(b) ( b = FMR + n * 32; b[1 + 2 * b[0]] = lo; b[2 + 2 * b[0]] = hi; b[0] += 1; );
+FMR[0] = FMR[32] = FMR[64] = FMR[96] = 0;
+// 0 hat FM: ratios 1.25 1.75 3.25 3.75 (dense, inharmonic)
+fpair(0, 14, 15); fpair(0, 23, 25); fpair(0, 42, 43); fpair(0, 51, 52);
+// 1 metal: all x.25 / x.333 / x.667 / x.75 ratios up to 4
+fpair(1, 14, 15); fpair(1, 23, 25); fpair(1, 42, 43); fpair(1, 51, 52); fpair(1, 3, 4);
+fpair(1, 10, 11); fpair(1, 16, 18); fpair(1, 21, 22); fpair(1, 44, 45); fpair(1, 48, 50);
+// 2 bell: whole ratios 1 2 3 4 5 6 (harmonic)
+fpair(2, 12, 13); fpair(2, 26, 27); fpair(2, 39, 41); fpair(2, 53, 54); fpair(2, 62, 63); fpair(2, 71, 73);
+// 3 bass: ratio 1 or 2
+fpair(3, 12, 13); fpair(3, 26, 27);
+// recipes per kind: KC[k * 8] = count, KC[k * 8 + 1 + r] = L1 src * 3 + mod (for keeping the family)
+function kcset(k, n, c0, c1, c2, c3) ( KC[k * 8] = n; KC[k * 8 + 1] = c0; KC[k * 8 + 2] = c1; KC[k * 8 + 3] = c2; KC[k * 8 + 4] = c3; );
+kcset(0, 2, 0, 0, 0, 0);     // KICK: punch, round (sine rise-fall)
+kcset(1, 2, 0, 3, 0, 0);     // SNARE: sine body, saw industrial
+kcset(2, 1, 12, 0, 0, 0);    // CLAP: BP noise
+kcset(3, 2, 6, 4, 0, 0);     // HAT: HP noise, saw FM
+kcset(4, 2, 1, 0, 0, 0);     // METAL: sine FM, two sines + fold
+kcset(5, 4, 0, 0, 3, 1);     // PERC: tom, rim, cowbell (saw), bell (sine FM)
+kcset(6, 2, 1, 3, 0, 0);     // BASS: sine FM, saw
+kcset(7, 4, 2, 0, 12, 0);    // MICRO: blip (random mod), zap, tick, ping
+
+// sa = Amount 0-1, sp = part, swr = what is written (0 whole part, 1 L1 only, 2 L2 only)
+function sput(i, lo, hi) local(t, v) (
+  !lockm[i] ? (
+    lo > hi ? (t = lo; lo = hi; hi = t;);
+    t = lo + rand(1) * (hi - lo);
+    v = slider(i) + sa * (t - slider(i));
+    putv(i, max(lo, min(hi, v)));
+  );
+);
+function schance() ( rand(1) < sa );
+// FM RATE from list n: kept when already on a listed ratio and the roll (chance = Amount) does not change it
+function slist(i, n) local(b, k, c, f) (
+  !lockm[i] ? (
+    b = FMR + n * 32; c = clampv(slider(i)); f = 0; k = 0;
+    loop(b[0], (c >= b[1 + 2 * k] && c <= b[2 + 2 * k]) ? (f = 1;); k += 1;);
+    (!f || schance()) ? (k = floor(rand(b[0])); putv(i, b[1 + 2 * k] + floor(rand(b[2 + 2 * k] - b[1 + 2 * k] + 1))););
+  );
+);
+// layer ln (1 / 2) of part sp: Select; the cell calls below (lv lt spit lm) then work on that layer
+function ly(ln, src, md, eg) local(n) (
+  slb = sp * 22 + 1 + (ln - 1) * 7; sact = swr == 0 || swr == ln;
+  sact && !lockm[slb] ? (
+    n = selnum(slider(slb));
+    eg < 0 ? (eg = rand(1) < 0.33 ? 0 : 1;);
+    !(sa < 0.5 && floor(n / 3) == src * 3 + md) ? putv(slb, selval(src * 9 + md * 3 + eg));
+  );
+  ssrc = floor(selnum(slider(slb)) / 9);
+);
+function lv(lo, hi) ( sact ? sput(slb + 1, lo, hi); );
+function lt(a0, a1, r0, r1) ( sact ? (sput(slb + 2, a0, a1); sput(slb + 3, r0, r1);); );
+// pitch; QPI on + sine / saw: PIT capped at 20 (higher PIT = a floor that cuts the low notes, run 5)
+function spit(lo, hi) (
+  sact ? (
+    slider(151 + sp) >= 0.5 && ssrc <= 1 ? (hi = min(hi, 20); lo = min(lo, hi););
+    sput(slb + 4, lo, hi);
+  );
+);
+function lpr(lo, hi) local(b) ( b = clampv(slider(sp * 22 + 5)); spit(b + lo, b + hi); );   // relative to L1 PIT
+function lm(m0, m1, r0, r1) ( sact ? (sput(slb + 5, m0, m1); sput(slb + 6, r0, r1);); );
+function lmf(m0, m1, n) ( sact ? (sput(slb + 5, m0, m1); slist(slb + 6, n);); );
+// BIT: 0, or lo-hi with chance ch (below 50 % Amount the current side is kept). Bit is inaudible below ~64 (run 4)
+function pbit(ch, lo, hi) local(i, c) (
+  swr == 0 ? (
+    i = sp * 22 + 16; c = clampv(slider(i));
+    (sa < 0.5 ? (c >= lo && c <= hi) : rand(1) < ch) && hi > 0 ? sput(i, lo, hi) : sput(i, 0, 0);
+  );
+);
+// part rows: FOLD f0-f1, DRIVE d0-d1, WG SEND w0-w1, CLIP (0 = off, 1 = off or hard). PAN / GAIN / FILT only move
+// when unlocked (locked by default): PAN span0-span1, GAIN 64-90 (0 to +1.5 dB), FILT 64-80 (neutral on every source, run 4)
+function pr(f0, f1, d0, d1, w0, w1, clp) local(b) (
+  swr == 0 ? (
+    b = sp * 22 + 14;   // b + 1 PAN, + 2 BIT, + 3 FOLD, + 4 DRIVE, + 5 GAIN, + 6 SEND, + 7 FILT, + 8 CLIP
+    sput(b + 1, span0, span1); sput(b + 3, f0, f1); sput(b + 4, d0, d1); sput(b + 5, 64, 90); sput(b + 6, w0, w1); sput(b + 7, 64, 80);
+    !lockm[b + 8] ? (clp == 0 ? putv(b + 8, 0) : schance() ? putv(b + 8, rand(1) < 0.5 ? 0 : 100););
+  );
+);
+function rnoff() ( lm(64, 64, 64, 64); );   // rise-fall at 64 = no sweep / no mod
+
+// ---- recipes (ranges: plans\volca-smart-generator.md) ----
+function skick(r) (
+  r == 0 ? (   // punch: 42-67 Hz body, +21..+43 st in 15-24 ms, 125-855 ms tail; short click layer on the same note
+    ly(1, 0, 0, -1); lv(110, 127); spit(9, 13); lm(84, 96, 64, 80); lt(0, 8, 48, 80);
+    ly(2, 0, 0, 1); lv(20, 40); lpr(0, 0); lm(96, 108, 56, 72); lt(0, 0, 32, 48);
+    pbit(0, 0, 0); pr(0, 50, 0, 80, 0, 10, 1);
+  ) : (        // round (Kick Start): low body, soft slow punch, noise beater, fold + drive
+    ly(1, 0, 0, -1); lv(110, 127); spit(8, 11); lm(72, 80, 40, 56); lt(0, 8, 56, 72);
+    ly(2, rand(1) < 0.5 ? 4 : 3, 0, 1); lv(20, 50); spit(40, 80); rnoff(); lt(0, 0, 24, 40);
+    pbit(0, 0, 0); pr(30, 60, 40, 70, 0, 10, 0);
+  );
+);
+function ssnare(r) (
+  r == 0 ? (   // sine body 130-270 Hz + HP or BP noise
+    ly(1, 0, 0, -1); lv(100, 127); spit(20, 30); lm(80, 92, 64, 80); lt(0, 0, 40, 56);
+    rand(1) < 0.5 ? (ly(2, 2, 0, 1); spit(84, 100);) : (ly(2, 4, 0, 1); spit(70, 90););
+    lv(90, 127); rnoff(); lt(0, 16, 50, 72);
+    pbit(0.25, 80, 112); pr(0, 50, 30, 110, 10, 40, 1);
+  ) : (        // industrial: saw body + BP noise, driven
+    ly(1, 1, 0, -1); lv(100, 127); spit(22, 28); lm(84, 96, 64, 72); lt(0, 0, 44, 56);
+    ly(2, 4, 0, 1); lv(90, 127); spit(72, 88); rnoff(); lt(0, 16, 56, 72);
+    pbit(0.25, 80, 112); pr(20, 60, 50, 110, 10, 40, 1);
+  );
+);
+function sclap() (   // BP noise MULTI (bursts) + HP noise snap
+  ly(1, 4, 0, 2); lv(110, 127); spit(66, 84); rnoff(); lt(0, 0, 44, 60);
+  ly(2, 2, 0, 1); lv(60, 90); spit(88, 104); rnoff(); lt(0, 0, 36, 56);
+  pbit(0, 0, 0); pr(0, 0, 0, 60, 20, 50, 0);
+);
+// hatopen: -1 = closed or open (1 in 3), 0 = closed, 1 = open
+function shat(r) local(op) (
+  op = hatopen < 0 ? rand(1) < 0.33 : hatopen;
+  r == 0 ? (   // HP noise + BP noise
+    ly(1, 2, 0, 1); lv(100, 127); spit(104, 127); rnoff(); op ? lt(0, 16, 52, 68) : lt(0, 32, 16, 36);
+    ly(2, 4, 0, 1); lv(60, 100); spit(112, 127); rnoff(); op ? lt(0, 8, 48, 64) : lt(0, 24, 16, 32);
+    pbit(0, 0, 0); pr(0, 0, 0, 30, 0, 20, 0);
+  ) : (        // FM hat: saw (or sine) FM sizzle at an inharmonic ratio + HP noise
+    ly(1, rand(1) < 0.7 ? 1 : 0, 1, 1); lv(100, 127); spit(96, 110); lmf(108, 120, 0); op ? lt(0, 0, 48, 64) : lt(0, 0, 20, 40);
+    ly(2, 2, 0, 1); lv(60, 100); spit(104, 127); rnoff(); op ? lt(0, 0, 48, 64) : lt(0, 0, 20, 36);
+    pbit(0.4, 80, 104); pr(0, 0, 0, 30, 0, 20, 0);
+  );
+);
+function smetal(r) (
+  r == 0 ? (   // FM clang: two FM sines at inharmonic ratios, metal depth (MOD 104-112)
+    ly(1, 0, 1, 1); lv(110, 127); spit(40, 64); lmf(104, 112, 1); lt(0, 0, 40, 60);
+    ly(2, 0, 1, 1); lv(70, 110); lpr(6, 12); lmf(96, 112, 1); lt(0, 0, 32, 52);
+    pbit(0.3, 64, 96); pr(20, 60, 0, 60, 20, 60, 0);
+  ) : (        // two sines ~1 : 1.4 + heavy fold (metal without FM)
+    ly(1, 0, 0, 1); lv(110, 127); spit(44, 64); rnoff(); lt(0, 0, 44, 58);
+    ly(2, 0, 0, 1); lv(90, 120); lpr(8, 11); rnoff(); lt(0, 0, 40, 54);
+    pbit(0.3, 64, 96); pr(64, 100, 40, 80, 10, 40, 0);
+  );
+);
+function sperc(r) (
+  r == 0 ? (   // tom / conga: sine 90-205 Hz, slow-ish sweep + quiet noise
+    ly(1, 0, 0, -1); lv(110, 127); spit(16, 26); lm(78, 90, 40, 64); lt(0, 0, 48, 64);
+    ly(2, rand(1) < 0.5 ? 3 : 4, 0, 1); lv(30, 50); spit(40, 64); rnoff(); lt(0, 0, 24, 36);
+    pbit(0, 0, 0); pr(0, 30, 0, 50, 10, 40, 0);
+  ) : r == 1 ? (   // rim: high sine, tiny fast sweep, short + BP click
+    ly(1, 0, 0, 1); lv(110, 127); spit(40, 56); lm(76, 84, 88, 104); lt(0, 0, 20, 32);
+    ly(2, 4, 0, 1); lv(70, 100); spit(88, 104); rnoff(); lt(0, 0, 16, 28);
+    pbit(0, 0, 0); pr(0, 20, 0, 40, 0, 30, 0);
+  ) : r == 2 ? (   // cowbell: two saws ~1 : 1.5
+    ly(1, 1, 0, 1); lv(110, 127); spit(40, 48); rnoff(); lt(0, 0, 36, 48);
+    ly(2, 1, 0, 1); lv(100, 120); lpr(6, 10); rnoff(); lt(0, 0, 36, 46);
+    pbit(0, 0, 0); pr(0, 30, 0, 40, 0, 30, 0);
+  ) : (            // bell: sine FM at a whole ratio, bell depth (MOD 88-100) + a quiet sine an octave up
+    ly(1, 0, 1, 1); lv(110, 127); spit(32, 48); lmf(88, 100, 2); lt(0, 0, 48, 64);
+    ly(2, 0, 0, 1); lv(40, 80); lpr(13, 15); rnoff(); lt(0, 0, 40, 56);
+    pbit(0, 0, 0); pr(0, 20, 0, 30, 30, 70, 0);
+  );
+);
+function sbass(r) (
+  r == 0 ? (   // FM bass: sine 47-82 Hz, ratio 1 or 2, light-bell depth + sine sub on the same note
+    ly(1, 0, 1, 1); lv(110, 127); spit(9, 15); lmf(80, 92, 3); lt(0, 0, 56, 72);
+    ly(2, 0, 0, 1); lv(60, 100); lpr(0, 0); rnoff(); lt(0, 0, 56, 72);
+    pbit(0, 0, 0); pr(0, 20, 20, 60, 0, 0, 0);
+  ) : (        // saw bass + sine sub
+    ly(1, 1, 0, 1); lv(110, 127); spit(9, 15); lm(64, 72, 48, 72); lt(0, 0, 56, 72);
+    ly(2, 0, 0, 1); lv(60, 100); lpr(0, 0); rnoff(); lt(0, 0, 56, 72);
+    pbit(0, 0, 0); pr(0, 40, 20, 70, 0, 0, 0);
+  );
+);
+function smicro(r) (
+  span0 = 16; span1 = 112;   // micro chatter: wide pan (when PAN is unlocked)
+  r == 0 ? (   // blip: random-mod sine + HP tick
+    ly(1, 0, 2, 1); lv(100, 127); spit(48, 80); lm(96, 112, 64, 110); lt(0, 0, 20, 40);
+    ly(2, 2, 0, 1); lv(40, 80); spit(100, 120); rnoff(); lt(0, 0, 0, 16);
+    pbit(0.4, 64, 112); pr(0, 40, 0, 40, 0, 20, 0);
+  ) : r == 1 ? (   // zap: big fast sweep, sine + saw
+    ly(1, 0, 0, 1); lv(110, 127); spit(56, 80); lm(104, 120, 64, 88); lt(0, 0, 28, 44);
+    ly(2, 1, 0, 1); lv(40, 70); spit(56, 80); lm(104, 120, 64, 88); lt(0, 0, 24, 40);
+    pbit(0.4, 64, 112); pr(0, 40, 0, 40, 0, 20, 0);
+  ) : r == 2 ? (   // tick: very short noise + high sine
+    ly(1, rand(1) < 0.5 ? 4 : 2, 0, 1); lv(110, 127); spit(90, 120); rnoff(); lt(0, 0, 0, 24);
+    ly(2, 0, 0, 1); lv(40, 80); spit(90, 100); rnoff(); lt(0, 0, 0, 20);
+    pbit(0, 0, 0); pr(0, 20, 0, 30, 0, 20, 0);
+  ) : (            // ping: short sine into a full waveguide send
+    ly(1, 0, 0, 1); lv(100, 127); spit(30, 60); rnoff(); lt(0, 0, 0, 24);
+    ly(2, 4, 0, 1); lv(30, 60); spit(80, 110); rnoff(); lt(0, 0, 0, 16);
+    pbit(0, 0, 0); pr(0, 20, 0, 30, 100, 127, 0);
+  );
+);
+function srec(k, r) (
+  k == 0 ? skick(r) : k == 1 ? ssnare(r) : k == 2 ? sclap() : k == 3 ? shat(r) : k == 4 ? smetal(r) :
+  k == 5 ? sperc(r) : k == 6 ? sbass(r) : smicro(r);
+);
+// recipe for kind k in part sp: random, or one that fits the current L1 source + mod (see above)
+function pickrec(k) local(n, r, c, m, j) (
+  n = KC[k * 8]; r = floor(rand(n));
+  (sa < 0.5 || lockm[sp * 22 + 1] || swr == 2) ? (
+    c = floor(selnum(slider(sp * 22 + 1)) / 3); m = 0;
+    j = 0; loop(n, KC[k * 8 + 1 + j] == c ? (m += 1;); j += 1;);
+    m > 0 ? (
+      m = floor(rand(m)); j = 0;
+      loop(n, KC[k * 8 + 1 + j] == c ? (m == 0 ? (r = j;); m -= 1;); j += 1;);
+    );
+  );
+  r;
+);
+// w: 0 = whole part, 1 = layer 1, 2 = layer 2. LINK on: the other layer copies the rolled one
+function srollpart(p, w, k) local(r, i) (
+  sp = p; swr = w; span0 = 40; span1 = 88;
+  r = pickrec(k); srec(k, r); srn = r;
+  slider(138 + p) >= 0.5 ? (
+    i = 0;
+    loop(7, w == 2 ? rput(p * 22 + 1 + i, slider(p * 22 + 8 + i)) : rput(p * 22 + 8 + i, slider(p * 22 + 1 + i)); i += 1;);
+  );
+);
+// waveguide: TUBE (short) or STRING (long, 1 in 3); STRING: TUNE 96-127 (0.25-1.8 s), TUBE: TUNE 32-127 (run 5)
+function swg() local(lng) (
+  lng = slider(133) >= 64;
+  !lockm[133] && schance() ? (lng = rand(1) < 0.33; putv(133, lng ? 127 : 0););
+  sput(134, 40, 100); sput(135, 40, 100); lng ? sput(136, 96, 127) : sput(136, 32, 127);
+);
+// MIX on KIT: a drum kit, P1 kick, P2 snare, P3 closed hat, P4 open hat or metal, P5 clap, P6 perc
+function smix(p) local(k) (
+  hatopen = -1; k = p == 0 ? 0 : p == 1 ? 1 : p == 2 ? 3 : p == 3 ? (rand(1) < 0.5 ? 3 : 4) : p == 4 ? 2 : 5;
+  p == 2 ? (hatopen = 0;); p == 3 ? (hatopen = 1;);
+  srollpart(p, 0, k); hatopen = -1;
+);
+
 // target: Part / Layer = the focused part (waveguide if that is focused), Kit = all parts + waveguide
 // part lock plock[0-5] / plock[6] = waveguide: skipped by every roll
-function doroll() local(i, t, p) (
+function doroll() local(i, t, p, k, kk, sm) (
   t = floor(slider(145) + 0.5);
+  sm = slider(158) < 0.5; k = max(0, min(8, floor(slider(159) + 0.5))); sa = slider(144) / 100; hatopen = -1;
   t != 3 && plock[fp] ? (
     fp == 6 ? strcpy(#rm, "WAVEGUIDE IS LOCKED") : sprintf(#rm, "PART %d IS LOCKED", fp + 1);
   ) : (
   snapundo("ROLL"); ck_ed = 1;
   t == 3 ? (
-    p = 0; loop(6, !plock[p] ? rollpart(p, 0); p += 1;); !plock[6] ? rollwg();
-    sprintf(#rm, "RANDOM · KIT · %d%%", slider(144));
+    p = 0; loop(6, !plock[p] ? (sm ? (k == 8 ? smix(p) : srollpart(p, 0, k)) : rollpart(p, 0);); p += 1;);
+    !plock[6] ? (sm ? swg() : rollwg(););
+    !sm ? sprintf(#rm, "WILD · KIT · %d%%", slider(144))
+    : k == 8 ? sprintf(#rm, "SMART · DRUM KIT · %d%%", slider(144))
+    : sprintf(#rm, "SMART · KIT OF %s · %d%%", kname(k), slider(144));
   ) : fp == 6 ? (
-    rollwg(); sprintf(#rm, "RANDOM · WAVEGUIDE · %d%%", slider(144));
+    sm ? swg() : rollwg();
+    sprintf(#rm, "%s · WAVEGUIDE · %d%%", sm ? "SMART" : "WILD", slider(144));
+  ) : sm ? (
+    kk = k == 8 ? floor(rand(8)) : k;
+    srollpart(fp, t, kk);
+    t == 0 ? sprintf(#rm, "SMART · %s %s · PART %d · %d%%", kname(kk), rname(kk, srn), fp + 1, slider(144))
+           : sprintf(#rm, "SMART · %s %s · PART %d · LAYER %d · %d%%", kname(kk), rname(kk, srn), fp + 1, t, slider(144));
   ) : (
     rollpart(fp, t);
-    t == 0 ? sprintf(#rm, "RANDOM · PART %d · %d%%", fp + 1, slider(144))
-           : sprintf(#rm, "RANDOM · PART %d · LAYER %d · %d%%", fp + 1, t, slider(144));
+    t == 0 ? sprintf(#rm, "WILD · PART %d · %d%%", fp + 1, slider(144))
+           : sprintf(#rm, "WILD · PART %d · LAYER %d · %d%%", fp + 1, t, slider(144));
   );
   roll_t = time_precise();
   );
@@ -1127,7 +1380,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   // title block
   gfx_setfont(1, "Bahnschrift", floor(S(20) * 1.2 + 0.5), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(2));
   gfx_setfont(3, "Bahnschrift", floor(S(12) * 1.2 + 0.5), 'b'); rc(K_ACC, 1); txt("P A N E L", MG + S(1), MG + S(29));
-  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v2.1.3 · classic", MG + S(1), MG + S(47));   // bump on every change
+  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v2.5 · classic", MG + S(1), MG + S(47));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch (accent color), like the sequencer; hover = name in the readout
   rc(K_LBL, 0.8); frame(LKBX, LKBY, LCW, LKBH); gfx_rect(LKBX + S(3), LKBY + S(3), (LCW - S(6)) / 2, LKBH - S(6));
   rc(K_ACC, 1); gfx_rect(CLBX + S(2), CLBY + S(2), LCW - S(4), LKBH - S(4)); rc(K_LBL, 0.8); frame(CLBX, CLBY, LCW, LKBH);
@@ -1150,7 +1403,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   rc(K_PLY, 1); gfx_rect(0, 0, TTW, HDH);
   gfx_setfont(1, #sf, S(32), sfb); rc(K_BG2, 1); txt("VOLCA", S(12), S(2)); txt("DRUM", S(12), S(28));
   sfont(3, S(11)); txt("P A N E L", S(13), S(58));
-  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v2.1.3 · sleeve", S(13), S(72));   // bump on every change
+  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v2.5 · sleeve", S(13), S(72));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch
   rc(K_BG2, 0.8); frame2(LKBX, LKBY, LCW, LKBH, S(2)); gfx_rect(LKBX + S(4), LKBY + S(4), (LCW - S(8)) / 2, LKBH - S(8));
   rc(K_BG2, 1); gfx_rect(CLBX, CLBY, LCW, LKBH); rc(K_ACC, 1); gfx_rect(CLBX + S(3), CLBY + S(3), LCW - S(6), LKBH - S(6));
@@ -1253,25 +1506,58 @@ function readindex() local(h, n, c) (
   n;
 );
 function sound_req(r) ( gmem[200] = fp; gmem[201] = r; save_req = 1; save_req_t = time_precise(); );
-function sound_menu(x, y) local(sel, n, k, m, fc) (
-  n = readindex();
+// v2.3 groups: sounds that share their first word ("Kick Horgan A1", "Kick Start 003") go into a submenu named after
+// that word, the item shows the rest of the name. Words used only once go into "More" (flat list when there are no groups).
+// SGK[k] = first sound with the same first word (group head), SMAP[i] = sound of the i-th clickable sound item
+// (submenu headers ">" are not counted by gfx_showmenu).
+SGK = 8400; SMAP = 8700;   // 250 each
+function wlen(s) local(i, c, n) ( n = strlen(s); i = 0; c = -1; while (c < 0 && i < n) (str_getchar(s, i) == 32 ? (c = i;); i += 1;); c < 0 ? n : c; );
+function sameword(a, b) local(la) ( la = wlen(IBASE + a); la == wlen(IBASE + b) && strnicmp(IBASE + a, IBASE + b, la) == 0; );
+function gcount(g) local(k, c) ( c = 0; k = 0; loop(snd_n, SGK[k] == g ? (c += 1;); k += 1;); c; );
+// one sound item: from = first char shown (0 = full name), last = closes the submenu
+function snditem(k, from, last) local(fc) (
+  strcat(#mn, "|"); last ? strcat(#mn, "<");
+  from > 0 ? strcpy_from(#sndt, IBASE + k, from) : strcpy(#sndt, IBASE + k);
+  fc = str_getchar(#sndt, 0); (fc == 35 || fc == 33 || fc == 62 || fc == 60) ? strcat(#mn, " ");   // # ! > < = menu syntax: a space in front
+  strcat(#mn, #sndt); SMAP[snd_ni] = k; snd_ni += 1;
+);
+function soundlist() local(k, j, g, c, left, w, ngrp, nsing) (
+  snd_ni = 0;
+  k = 0; loop(snd_n, SGK[k] = k; j = 0; while (j < k && SGK[k] == k) (sameword(j, k) ? (SGK[k] = SGK[j];); j += 1;); k += 1;);
+  ngrp = 0; nsing = 0;
+  g = 0; loop(snd_n, SGK[g] == g ? (gcount(g) >= 2 ? (ngrp += 1;) : (nsing += 1;);); g += 1;);
+  // groups (order of the index = alphabetical)
+  g = 0; loop(snd_n,
+    SGK[g] == g && (c = gcount(g)) >= 2 ? (
+      w = wlen(IBASE + g); strncpy(#sndt, IBASE + g, w); strcat(#mn, "|>"); strcat(#mn, #sndt);
+      left = c; k = g; loop(snd_n - g, SGK[k] == g ? (left -= 1; snditem(k, strlen(IBASE + k) > w ? w + 1 : 0, left == 0);); k += 1;);
+    );
+    g += 1;
+  );
+  // single words: "More" submenu, or flat when there are no groups
+  nsing > 0 ? (
+    ngrp > 0 ? strcat(#mn, "|>More");
+    left = nsing; g = 0; loop(snd_n, SGK[g] == g && gcount(g) == 1 ? (left -= 1; snditem(g, 0, ngrp > 0 && left == 0);); g += 1;);
+  );
+);
+function sound_menu(x, y) local(sel, n, m) (
+  n = readindex(); snd_n = n; snd_ni = 0;
   fp == 6 ? strcpy(#mn, "#CLICK A PART FIRST") : (
     sprintf(#mn, "SAVE PART %d AS SOUND...|", fp + 1);
     sprintf(#t2, "COPY PART %d|", fp + 1); strcat(#mn, #t2);
     cb_ok ? sprintf(#t2, "PASTE PART %d > PART %d||", cb_from + 1, fp + 1) : strcpy(#t2, "#PASTE (COPY A PART FIRST)||");
     strcat(#mn, #t2);
     sprintf(#t2, "#LOAD SOUND INTO PART %d", fp + 1); strcat(#mn, #t2);
-    n == 0 ? strcat(#mn, "|#(no sound index yet: save a sound once)");
-    k = 0; loop(n, strcat(#mn, "|"); fc = str_getchar(IBASE + k, 0); (fc == 35 || fc == 33 || fc == 62 || fc == 60) ? strcat(#mn, " "); strcat(#mn, IBASE + k); k += 1;);   // # ! > < at the start = menu syntax: a space in front
+    n == 0 ? strcat(#mn, "|#(no sound index yet: save a sound once)") : soundlist();
     strcat(#mn, "||RENAME SOUND...|DELETE SOUND...");
   );
   gfx_x = x; gfx_y = y;
   sel = gfx_showmenu(#mn);
-  m = max(n, 1);   // menu items in the sound list (1 = the "no index" line)
+  m = max(snd_ni, 1);   // clickable items in the sound list (1 = the "no index" line)
   fp != 6 ? (
     sel == 1 ? sound_req(1) :
     sel == 2 ? copypart() : sel == 3 ? pastepart() :
-    sel >= 5 && sel - 5 < n ? (sprintf(SBASE, "NH4X Volca/VolcaSounds/%s.txt", IBASE + sel - 5); loadsound(0);) :
+    sel >= 5 && sel - 5 < snd_ni ? (sprintf(SBASE, "NH4X Volca/VolcaSounds/%s.txt", IBASE + SMAP[sel - 5]); loadsound(0);) :
     sel == 5 + m ? sound_req(4) : sel == 6 + m ? sound_req(3);
   );
 );
@@ -1475,32 +1761,49 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b');
   plock[6] ? rc(K_HOT, 1) : wact ? rc(K_TXT, 1) : rc(K_DIM, 1);
   txt("WAVEGUIDE", wx + S(9), wy + S(6));
-  ry = wy + S(36);
-  wi = 0;
-  loop(4,
-    gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_LBL, 1); txt(wlong(wi), wx + S(9), ry);
-    drawbar(133 + wi, wx + S(9), ry + S(16), WGW - S(18), S(20), 4);
-    ry += S(48); wi += 1;
+  // v2.5: MODEL (TUBE / STRING) full width, DECAY / BODY / TUNE label-left (like Sleeve): room for the SMART controls
+  ry = wy + S(32);
+  drawbar(133, wx + S(9), ry, WGW - S(18), S(20), 4);
+  ry += S(26);
+  CLW = S(46);
+  wi = 1;
+  loop(3,
+    gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_LBL, 1); gfx_measurestr("D", tw, th); txt(wlong(wi), wx + S(9), ry + (S(20) - th) / 2);
+    drawbar(133 + wi, wx + S(9) + CLW, ry, WGW - S(18) - CLW, S(20), 4);
+    ry += S(24); wi += 1;
   );
   rdx = wx + S(9); rwd = WGW - S(18);
-  ry0 = wy + S(240);
+  ry0 = wy + S(150);
   rc(K_PNLB, 1); gfx_rect(rdx, ry0 - S(10), rwd, 1);
   gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b'); wact ? rc(K_TXT, 1) : rc(K_DIM, 1); txt("RANDOM", rdx, ry0 - S(2));
-  sgw = floor((rwd - S(4)) / 2); sgh = S(20);
+  // target: one row (v2.5)
+  sgw = floor((rwd - 3 * S(3)) / 4); sgh = S(20);
   q = 0;
   loop(4,
-    sgx[q] = rdx + (q % 2) * (sgw + S(4)); sgy[q] = ry0 + S(22) + floor(q / 2) * (sgh + S(4));
-    tbtn(sgx[q], sgy[q], sgw, sgh, q == 0 ? "PART" : q == 1 ? "LAYER 1" : q == 2 ? "LAYER 2" : "KIT", floor(slider(145) + 0.5) == q, S(11));
+    sgx[q] = rdx + q * (sgw + S(3)); sgy[q] = ry0 + S(20);
+    tbtn(sgx[q], sgy[q], sgw, sgh, q == 0 ? "PART" : q == 1 ? "L1" : q == 2 ? "L2" : "KIT", floor(slider(145) + 0.5) == q, S(10));
     q += 1;
   );
-  gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_LBL, 1); txt("AMOUNT", rdx, ry0 + S(72));
-  amx = rdx; amy = ry0 + S(89); amw = rwd; amh = S(20);
+  // kind 3 x 3 (v2.5), dimmed while WILD
+  kgw = floor((rwd - 2 * S(3)) / 3); kgh = S(19);
+  q = 0;
+  loop(9,
+    kgx[q] = rdx + (q % 3) * (kgw + S(3)); kgy[q] = ry0 + S(46) + floor(q / 3) * S(22);
+    tbtn(kgx[q], kgy[q], kgw, kgh, kname(q), floor(slider(159) + 0.5) == q, S(10));
+    q += 1;
+  );
+  slider(158) >= 0.5 ? (wact ? rc(K_PNLF, 0.6) : rc(K_PNL, 0.6); gfx_rect(rdx, kgy[0], rwd, kgy[8] + kgh - kgy[0]););
+  gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_LBL, 1); txt("AMOUNT", rdx, ry0 + S(114));
+  amx = rdx; amy = ry0 + S(130); amw = rwd; amh = S(20);
   rc(K_FLD, 1); gfx_rect(amx, amy, amw, amh);
   rc(K_ACC, 0.72); gfx_rect(amx, amy, max(1, slider(144) / 100 * amw), amh);
   rc(K_CELB, 1); frame(amx - 1, amy - 1, amw + 2, amh + 2);
   gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(144)); gfx_measurestr(20, tw, th);
   rc(K_TXT, 0.95); txt(20, amx + amw - tw - S(3), amy + (amh - th) / 2);
-  rbx = rdx; rby = ry0 + S(119); rbw = sgw; rbh = S(32); ubx = rdx + sgw + S(4);
+  // SMART / WILD right above ROLL (v2.5)
+  mdw = floor((rwd - S(4)) / 2); mdh = S(20); mdy = ry0 + S(156); msx = rdx; mwx = rdx + mdw + S(4);
+  tbtn(msx, mdy, mdw, mdh, "SMART", slider(158) < 0.5, S(11)); tbtn(mwx, mdy, mdw, mdh, "WILD", slider(158) >= 0.5, S(11));
+  rbx = rdx; rby = ry0 + S(182); rbw = mdw; rbh = S(30); ubx = rdx + mdw + S(4);
   rflash = max(0, 1 - (now - roll_t) / 1.0);
   gbtn(rbx, rby, rbw, rbh); rflash > 0 ? (rc(K_ACC, 0.55 * rflash); gfx_rect(rbx, rby, rbw, rbh););
   gbtn(ubx, rby, rbw, rbh);
@@ -1508,7 +1811,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   rc(K_TXT, 1); ctxt("ROLL", rbx, rby + (rbh - CF(S(15))) / 2 - 1, rbw);
   undo_ok ? rc(K_TXT, 1) : rc(K_DIM2, 1);
   ctxt(undone ? "REDO" : "UNDO", ubx, rby + (rbh - CF(S(15))) / 2 - 1, rbw);
-  mo0 = ry0 + S(166);
+  mo0 = ry0 + S(228);
   rc(K_PNLB, 1); gfx_rect(rdx, mo0 - S(10), rwd, 1);
   gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b'); wact ? rc(K_TXT, 1) : rc(K_DIM, 1); txt("MORPH", rdx, mo0 - S(2));
   mbh = S(22); mby_a = mo0 + S(22); mby_b = mby_a + mbh + S(4);
@@ -1531,7 +1834,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
   rc(K_TXT, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
   gfx_setfont(4, "Bahnschrift", S(12), 'b');
-  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v2.1.3", wx + S(9), gfx_h - MG - S(16));
+  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v2.5", wx + S(9), gfx_h - MG - S(16));
 ) : (
   // Sleeve: section heads with a thick rule, flat rows (bigger text, the column has room)
   SLW = S(62);   // label column
@@ -1540,39 +1843,53 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   ptx[6] = wx; pty[6] = wy; ptw[6] = WGW; pthh[6] = S(32);
   plock[6] ? (rc(K_HOT, 1); gfx_rect(wx, wy, WGW, S(4)););
   wact ? (rc(K_FOC, 1); gfx_rect(wx, wy + S(32), WGW, S(2)););
+  // v2.5: rows a few px tighter, room for the SMART controls
   ry = wy + S(36);
-  drawbar(133, wx, ry, WGW, S(26), 4);
-  ry += S(32);
+  drawbar(133, wx, ry, WGW, S(22), 4);
+  ry += S(26);
   wi = 1;
   loop(3,
-    sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("D", tw, th); txt(wlong(wi), wx, ry + (S(28) - th) / 2);
-    drawbar(133 + wi, wx + SLW, ry, WGW - SLW, S(28), 4);
-    rc(K_LINE2, 1); gfx_rect(wx, ry + S(28), WGW, 1);
-    ry += S(31); wi += 1;
+    sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("D", tw, th); txt(wlong(wi), wx, ry + (S(23) - th) / 2);
+    drawbar(133 + wi, wx + SLW, ry, WGW - SLW, S(23), 4);
+    rc(K_LINE2, 1); gfx_rect(wx, ry + S(23), WGW, 1);
+    ry += S(26); wi += 1;
   );
   rdx = wx; rwd = WGW;
-  ry0 = ry + S(12);
+  ry0 = ry + S(8);
   shead("RANDOM", ry0);
-  sgw = floor((rwd - S(4)) / 2); sgh = S(26);
+  // target: one row (v2.5)
+  sgw = floor((rwd - 3 * S(3)) / 4); sgh = S(24);
   q = 0;
   loop(4,
-    sgx[q] = rdx + (q % 2) * (sgw + S(4)); sgy[q] = ry0 + S(36) + floor(q / 2) * (sgh + S(4));
-    tbtn(sgx[q], sgy[q], sgw, sgh, q == 0 ? "PART" : q == 1 ? "LAYER 1" : q == 2 ? "LAYER 2" : "KIT", floor(slider(145) + 0.5) == q, S(14));
+    sgx[q] = rdx + q * (sgw + S(3)); sgy[q] = ry0 + S(32);
+    tbtn(sgx[q], sgy[q], sgw, sgh, q == 0 ? "PART" : q == 1 ? "L1" : q == 2 ? "L2" : "KIT", floor(slider(145) + 0.5) == q, S(14));
     q += 1;
   );
-  amx = rdx + SLW; amy = ry0 + S(98); amw = rwd - SLW; amh = S(28);
+  // kind 3 x 3 (v2.5), dimmed while WILD
+  kgw = floor((rwd - 2 * S(3)) / 3); kgh = S(20);
+  q = 0;
+  loop(9,
+    kgx[q] = rdx + (q % 3) * (kgw + S(3)); kgy[q] = ry0 + S(61) + floor(q / 3) * S(22);
+    tbtn(kgx[q], kgy[q], kgw, kgh, kname(q), floor(slider(159) + 0.5) == q, S(13));
+    q += 1;
+  );
+  slider(158) >= 0.5 ? (rc(K_BG2, 0.6); gfx_rect(rdx, kgy[0], rwd, kgy[8] + kgh - kgy[0]););
+  amx = rdx + SLW; amy = ry0 + S(130); amw = rwd - SLW; amh = S(24);
   sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("AMOUNT", rdx, amy + (amh - th) / 2);
   rc(K_BAR, 0.6); gfx_rect(amx, amy, max(1, slider(144) / 100 * amw), amh);
   sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(144)); gfx_measurestr(20, tw, th); rtxt(20, amx + amw - S(4), amy + (amh - th) / 2);
-  rbx = rdx; rby = amy + amh + S(8); rbw = sgw; rbh = S(34); ubx = rdx + sgw + S(4);
+  // SMART / WILD right above ROLL (v2.5)
+  mdw = floor((rwd - S(4)) / 2); mdh = S(24); mdy = ry0 + S(159); msx = rdx; mwx = rdx + mdw + S(4);
+  tbtn(msx, mdy, mdw, mdh, "SMART", slider(158) < 0.5, S(14)); tbtn(mwx, mdy, mdw, mdh, "WILD", slider(158) >= 0.5, S(14));
+  rbx = rdx; rby = ry0 + S(188); rbw = mdw; rbh = S(28); ubx = rdx + mdw + S(4);
   rflash = max(0, 1 - (now - roll_t) / 1.0);
   rflash > 0 ? rc(K_ACC, 1) : rc(K_PLY, 1); gfx_rect(rbx, rby, rbw, rbh);
   undo_ok ? rc(K_PLY, 1) : rc(K_LINE, 1); gfx_rect(ubx, rby, rbw, rbh);
   sfont(4, S(18)); rc(K_BG2, 1);
   ctxt("ROLL", rbx, rby + (rbh - S(18) * SFK) / 2, rbw); ctxt(undone ? "REDO" : "UNDO", ubx, rby + (rbh - S(18) * SFK) / 2, rbw);
-  mo0 = rby + rbh + S(14);
+  mo0 = rby + rbh + S(12);
   shead("MORPH", mo0);
-  mbh = S(28); mby_a = mo0 + S(36); mby_b = mby_a + mbh + S(4);
+  mbh = S(24); mby_a = mo0 + S(32); mby_b = mby_a + mbh + S(4);
   mm = slider(148) / 100;
   q = 0;
   loop(2,
@@ -1584,11 +1901,11 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
     gfx_measurestr("A", tw, th); txt(fit(33, rwd - S(14)), rdx + S(9), yy + (mbh - th) / 2);
     q += 1;
   );
-  mox = rdx + SLW; moy = mby_b + mbh + S(6); mow = rwd - SLW; moh = S(28);
+  mox = rdx + SLW; moy = mby_b + mbh + S(6); mow = rwd - SLW; moh = S(24);
   sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("A-B", rdx, moy + (moh - th) / 2);
   rc(K_BAR, 0.6); gfx_rect(mox, moy, max(1, mm * mow), moh);
   sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th); rtxt(20, mox + mow - S(4), moy + (moh - th) / 2);
-  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v2.1.3", wx, gfx_h - MG - S(14));
+  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v2.5", wx, gfx_h - MG - S(14));
 );
 
 // ---- mouse ----
@@ -1626,6 +1943,10 @@ function ptip(h, sub) local(p_, k_, o_, mi_) (   // v1.4.9.1: full name; a few w
   : h == 60 ? strcpy(#rm, "ROW LOCK · stays on ROLL + MORPH")
   : h == 82 ? strcpy(#rm, "UNDO · last roll / paste / sound / kit load / morph")
   : h == 85 ? strcpy(#rm, "MORPH · blend A > B")
+  : h == 86 ? strcpy(#rm, "SMART · rolls a sound of the chosen kind, inside its useful ranges")
+  : h == 87 ? strcpy(#rm, "WILD · rolls anything, full range")
+  : h == 97 ? strcpy(#rm, "MICRO · short blips, zaps, ticks, pings")
+  : h == 98 ? strcpy(#rm, "MIX · a kick, snare, hats, clap, perc kit on KIT; one random kind on a part")
 
   : h == 100 && sub == 135 ? strcpy(#rm, "WAVEGUIDE BODY · tone of the resonance")   // bars: the click shows the name, no tip
 );
@@ -1636,7 +1957,8 @@ pt_ = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? (pt_ = q;); q +=
 lh_ = -1; q = 0; loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lnkww && mouse_y >= lky[q] && mouse_y < lky[q] + lnkhh ? (lh_ = q;); q += 1;);
 lq_ = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? (lq_ = labq[q];); q += 1;);
 sg_ = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? (sg_ = q;); q += 1;);
-tlh = lkhit ? 1 : clhit ? 2 : qh_ >= 0 ? 10 + qh_ : ph_ >= 0 ? 20 + ph_ : pt_ >= 0 && hb_ == 0 ? 30 + pt_ : lh_ >= 0 ? 40 + lh_
+kd_ = -1; q = 0; loop(9, inr(kgx[q], kgy[q], kgw, kgh) ? (kd_ = q;); q += 1;);   // v2.5 kind buttons
+tlh = kd_ >= 0 ? 90 + kd_ : inr(msx, mdy, mdw, mdh) ? 86 : inr(mwx, mdy, mdw, mdh) ? 87 :lkhit ? 1 : clhit ? 2 : qh_ >= 0 ? 10 + qh_ : ph_ >= 0 ? 20 + ph_ : pt_ >= 0 && hb_ == 0 ? 30 + pt_ : lh_ >= 0 ? 40 + lh_
     : inr(sbx, sby, sbw, sbh) ? 50 : inr(ssx, ssy, ssw, ssh) ? 51 : inr(aox, aoy, aow, aoh) ? 52 : lq_ >= 0 ? 60 + 1000 * (lq_ + 2) : sg_ >= 0 ? 70 + sg_
     : inr(amx, amy, amw, amh) ? 80 : inr(rbx, rby, rbw, rbh) ? 81 : inr(ubx, rby, rbw, rbh) ? 82
     : inr(rdx, mby_a, rwd, mbh) ? 83 : inr(rdx, mby_b, rwd, mbh) ? 84 : inr(mox, moy, mow, moh) ? 85
@@ -1660,6 +1982,7 @@ mouse_cap & 1 ? (
     loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lnkww && mouse_y >= lky[q] && mouse_y < lky[q] + lnkhh ? (lhit = q;); q += 1;);
     lq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? (lq = labq[q];); q += 1;);
     sq = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? (sq = q;); q += 1;);
+    kq = -1; q = 0; loop(9, inr(kgx[q], kgy[q], kgw, kgh) ? (kq = q;); q += 1;);   // v2.5 kind buttons
     ah_i = mouse_cap & 8 ? hit(mouse_x, mouse_y) : 0;   // Shift+click on a bar = lock/unlock that cell
     mouse_cap & 8 && ah_i == 0 ? (vj = vhit(mouse_x, mouse_y); vj > 0 ? (ah_i = vsi[vj - 1];););   // split Select: whole Select cell
     tq = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? (tq = q;); q += 1;);
@@ -1696,8 +2019,16 @@ mouse_cap & 1 ? (
       togglerow(floor(lq / 32), lq % 32); slider_automate(slider(144)); drag = 0;   // automate = project gets "changed"
     ) : sq >= 0 ? (
       slider(145) = sq; slider_automate(slider(145)); drag = 0;
+    ) : kq >= 0 ? (   // v2.5: picking a kind also switches to SMART
+      slider(159) = kq; slider_automate(slider(159)); slider(158) = 0; slider_automate(slider(158));
+      sprintf(#rm, "SMART · %s · press ROLL", kname(kq)); msg(); drag = 0;
+    ) : inr(msx, mdy, mdw, mdh) || inr(mwx, mdy, mdw, mdh) ? (
+      slider(158) = inr(mwx, mdy, mdw, mdh); slider_automate(slider(158));
+      slider(158) >= 0.5 ? strcpy(#rm, "WILD · full-range roll") : sprintf(#rm, "SMART · %s", kname(floor(slider(159) + 0.5))); msg(); drag = 0;
     ) : inr(amx, amy, amw, amh) ? (
-      drag = -10;
+      // v2.4.1: double-click / Alt+click = default 50 %
+      mouse_cap & 16 || (lastclick_i == -100 && now - lastclick_t < 0.35) ? (setamt(50); lastclick_t = -1; drag = 0;)
+        : (lastclick_i = -100; lastclick_t = now; drag = -10;);
     ) : inr(rbx, rby, rbw, rbh) ? (
       doroll(); drag = 0;
     ) : inr(ubx, rby, rbw, rbh) ? (
@@ -1707,19 +2038,22 @@ mouse_cap & 1 ? (
     ) : inr(rdx, mby_b, rwd, mbh) ? (
       setab(1); drag = 0;
     ) : inr(mox, moy, mow, moh) ? (
-      snapundo("MORPH"); drag = -11;
+      snapundo("MORPH");
+      // v2.4.1: double-click / Alt+click = default 0 (= sound A)
+      mouse_cap & 16 || (lastclick_i == -101 && now - lastclick_t < 0.35) ? (setmorph(0); lastclick_t = -1; drag = 0;)
+        : (lastclick_i = -101; lastclick_t = now; drag = -11;);
     ) : (vj = vhit(mouse_x, mouse_y)) > 0 ? (
-      // split Select: click/drag = the segment under the mouse; double-click = first option
+      // split Select: click/drag = the segment under the mouse; double-click / Alt+click = first option
       vd = vj - 1;
-      -vj == lastclick_i && now - lastclick_t < 0.35 ? (
+      mouse_cap & 16 || (-vj == lastclick_i && now - lastclick_t < 0.35) ? (
         setcomp(vsi[vd], vsc[vd], 0); lastclick_t = -1; drag = 0;
       ) : (
         lastclick_i = -vj; lastclick_t = now; drag = -20;
       );
     ) : (
       drag = hit(mouse_x, mouse_y);
-      // double-click on the same bar = default value
-      drag > 0 && drag == lastclick_i && now - lastclick_t < 0.35 ? (
+      // double-click on the same bar / Alt+click (v2.4.1) = default value
+      drag > 0 && (mouse_cap & 16 || (drag == lastclick_i && now - lastclick_t < 0.35)) ? (
         setparam(drag, dflt[drag]);
         lastclick_t = -1; drag = 0;
       ) : (

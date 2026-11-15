@@ -1,5 +1,5 @@
 desc:Volca Drum Sequencer
-// VOLCA DRUM SEQUENCER 1.1.1 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
+// VOLCA DRUM SEQUENCER 1.1.4 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
@@ -423,6 +423,10 @@ function lnk(p) ( p < 6 && gmem[1720 + p] >= 0.5; );
 function lks(p, k) ( lnk(p) && k < 14 ? k % 7 : k; );
 // v1.1 (2026-11-15): P-LOCK cells, paint readout and step menu show L1/L2 LVL/ATT/REL/PIT/MOD/RATE locks in real units (measured, see unfmt)
 // v1.1.1 (2026-11-15): lock cells = number + the unit small after it
+// v1.1.2 (2026-11-15): no "~" on ATT / REL times (calibration run 3: EG types have the same length)
+// v1.1.3 (2026-11-15): mouse gaps filled: right-click lists on HUM, EUCLID HITS, GEN AMOUNT, INTENSITY, ACCENT AMT, BPM, length strip, P-LOCK PARAM;
+//   Alt = default on GEN AMOUNT / WHAT, EVOLVE CHANGES, BPM, length strip; double-click INTENSITY = 50; CAL right-click = menu (no silent reset), Alt+click CAL = 0 ms.
+// v1.1.4 (2026-11-15): Alt+click on a step sets the lane length only in STEPS (value tabs: Alt paints the default again, as meant); GEN amount messages say DENSITY / AMOUNT like the box label.
 // v1.0.1: L1/L2 PITCH locks + accent amounts are skipped on PIT lanes (QPI on: the note sets the pitch, a pitch CC leaves it off)
 function pqblk(p, k) ( (k == 4 || k == 11) && PON[p]; );
 function plv(p, b, k) local(j, w) ( pqblk(p, k) ? -1 : lnk(p) && k < 14 ? (j = k % 7; w = PL[b + j]; w < 0 ? (w = PL[b + j + 7];); w;) : PL[b + k]; );
@@ -1568,7 +1572,7 @@ function pname(k) (
 );
 // ---- real units (2026-11-15): measured on the Volca (vdcf 1.22), part 1 layer 1 SINE, LIN EG, RISE-FALL mod
 // (test recordings of a sine at many CC values). Values between the measured points are interpolated
-// (pitch + times on a log scale). Other EG / MOD types: the times get a "~", OSC / RND mod and noise pitch stay numbers.
+// (pitch + times on a log scale). Saw pitch = sine pitch. OSC / RND mod and noise pitch stay numbers.
 function unpc(i) ( i == 0 ? 0 : i == 1 ? 4 : i == 2 ? 8 : i == 3 ? 10 : i == 4 ? 11 : i == 5 ? 12 : i == 6 ? 14 : i == 7 ? 16 :
   i == 8 ? 20 : i == 9 ? 24 : i == 35 ? 127 : 28 + (i - 10) * 4; );
 function unph(i) ( i == 0 ? 20.00 : i == 1 ? 24.41 : i == 2 ? 37.64 : i == 3 ? 47 : i == 4 ? 53 : i == 5 ? 59.69 : i == 6 ? 74 :
@@ -1616,7 +1620,7 @@ function unfmt(k, v, sl, ov, q, ulg, s) local(n, src, mdt, eg, hz, m, c, a, t, r
 (
   n = floor(max(0, min(127, floor(sl + 0.5))) * 45 / 128); src = floor(n / 9); mdt = floor(n / 3) % 3; eg = n % 3;
   v = max(0, min(127, floor(v + 0.5))); ov = max(0, min(127, floor(ov + 0.5)));
-  strcpy(#unx, eg > 0 && ulg >= 0 ? "~" : "");   // times measured with LIN EG
+  strcpy(#unx, "");   // v1.1.2: no "~": LIN / EXP / MULTI have the same length (run 3), only the curve differs
   strcpy(#unu, "");   // ulg -1: the unit that goes after the number (small)
   r = 1;
   k == 1 ? (
@@ -2360,6 +2364,7 @@ function euapply(p) local(n, k, r, i, j) (
   n = LEN[p]; k = min(EUH[p], n); r = EUR[p] % n; i = 0;
   loop(n, j = (i - r + n) % n; ON[p * NSTEP + i] = (k > 0 && ((j * k) % n) < k); i += 1;);
 );
+function ramtn() ( rwhat == 0 || rwhat == 7 ? "DENSITY" : "AMOUNT"; );   // v1.1.4: same name as the box label
 function msgeu() ( sprintf(#rd, "PART %d · EUCLID %d / %d", focus + 1, EUH[focus], LEN[focus]); msgt = now; );
 function wname(i) ( i == 0 ? "STEPS" : i == 1 ? "VELOCITY" : i == 2 ? "CHANCE" : i == 3 ? "SLICE" : i == 4 ? "OFFSET" : i == 6 ? "PITCH" : i == 7 ? "STEPS WILD" : "P-LOCK"; );
 // v0.60 (port from Drum Seq v0.4) role-guided STEPS: the part number is the role (BEAT generator roles: 1 kick, 2 snare,
@@ -2430,7 +2435,7 @@ function genpress(h) local(i) (
 function gendrag() local(v) (
   drag == 66 ? (
     v = max(0, min(100, floor((dsv + (dsy - mouse_y) / S(3)) / 5 + 0.5) * 5)); ramt = v;
-    sprintf(#rd, "%s %d%%", rwhat == 0 || rwhat == 7 ? "DENSITY" : "AMOUNT", v); msgt = now;
+    sprintf(#rd, "%s %d%%", ramtn(), v); msgt = now;
   ) : (
     v = (drag == 61 ? max(0, min(LEN[focus], dsv + floor((dsy - mouse_y) / S(8) + 0.5)))
                     : max(0, min(LEN[focus] - 1, dsv + floor((dsy - mouse_y) / S(8) + 0.5))));
@@ -2445,7 +2450,7 @@ function genwheel(n) (
     snap(); hreg == 61 ? (EUH[focus] = max(0, min(LEN[focus], EUH[focus] + n));) : (EUR[focus] = (EUR[focus] + n + LEN[focus]) % LEN[focus];);
     euapply(focus); msgeu(); bump();
   ) : hreg == 65 ? (rwhat = (rwhat + n + 8) % 8; sprintf(#rd, "RANDOMIZE · %s", wname(rwhat)); msgt = now;)
-  : hreg == 66 ? (ramt = max(0, min(100, ramt + n * 5)); sprintf(#rd, "AMOUNT %d%%", ramt); msgt = now;);
+  : hreg == 66 ? (ramt = max(0, min(100, ramt + n * 5)); sprintf(#rd, "%s %d%%", ramtn(), ramt); msgt = now;);
 );
 function whatmenu() local(r, i) (
   strcpy(#m, ""); i = 0; loop(8, i == rwhat ? strcat(#m, "!"); strcat(#m, i == 5 ? "P-LOCK  (param of the P-LOCK tab)" : i == 0 ? "STEPS  (guided by the part: kick, snare, hats ...)" : i == 7 ? "STEPS WILD  (pure random)" : wname(i)); i < 7 ? strcat(#m, "|"); i += 1;);
@@ -2773,6 +2778,27 @@ function tpaint() local(k, kk, kend, s, ix, v, nv, lw, nop) (
   );
 );
 
+// v1.1.3: value lists for the right-click menus that were missing. k 0 = 0-100 % (humanize), 1 = 0-100 % in 25s,
+// 2 = accent amount, 3 = Euclid hits, 4 = BPM. vmenu returns the picked value or -1000.
+function vlcount(k) ( k == 0 ? 6 : k == 1 ? 5 : k == 2 ? 9 : k == 3 ? 11 : 10; );
+function vlist(k, i) (
+  k == 0 ? (i == 0 ? 0 : i == 1 ? 10 : i == 2 ? 25 : i == 3 ? 50 : i == 4 ? 75 : 100)
+  : k == 1 ? i * 25
+  : k == 2 ? (i - 4) * 16
+  : k == 3 ? (i <= 8 ? i : i == 9 ? 12 : 16)
+  : (i == 0 ? 90 : i == 1 ? 100 : i == 2 ? 110 : i == 3 ? 120 : i == 4 ? 125 : i == 5 ? 128 : i == 6 ? 130 : i == 7 ? 135 : i == 8 ? 140 : 150);
+);
+function vmenu(title, k, vcur) local(i, r, n) (
+  strcpy(#m, "[  "); strcat(#m, title); strcat(#m, "  ]|"); n = vlcount(k); i = 0;
+  loop(n,
+    vlist(k, i) == vcur ? strcat(#m, "!");
+    sprintf(#n, k == 2 ? "%+d" : k == 4 ? "%d BPM" : k == 3 ? "%d" : "%d%%", vlist(k, i)); strcat(#m, #n);
+    i < n - 1 ? strcat(#m, "|"); i += 1;
+  );
+  gfx_x = mouse_x; gfx_y = mouse_y; r = gfx_showmenu(#m) - 1;
+  r > 0 ? vlist(k, r - 1) : -1000;
+);
+
 // ---- double-click = default value (2026-11-05): LEN 16, RATE 1/16, DIR forward, lane swing = global, HUM 0,
 // global swing 50 %, BPM 120, STEP fields (velocity 63, chance 100 %, rest 0), random amount 50 %
 dbl = 0;
@@ -2783,7 +2809,7 @@ press ? (
 );
 // only boxes with a default take the double-click (steps, buttons etc. keep fast clicking)
 dbl = dbl && ((hreg == 3 && tab > 0) || hreg == 24 || hreg == 25 || hreg == 31 || hreg == 2 || hreg == 4 || hreg == 5 || hreg == 6 || hreg == 7 || hreg == 8 || hreg == 9 || hreg == 10
-              || (hreg >= 11 && hreg <= 18) || hreg == 66 || hreg == 91 || hreg == 92 || hreg == 93 || hreg == 96 || (!hreg && ffree && slider3 >= 0.5 && inr(HBX, HBY2, HBW, HBH)));
+              || (hreg >= 11 && hreg <= 18) || hreg == 66 || hreg == 85 || hreg == 91 || hreg == 92 || hreg == 93 || hreg == 96 || (!hreg && ffree && slider3 >= 0.5 && inr(HBX, HBY2, HBW, HBH)));
 press && dbl ? (
   hreg == 3 ? (
     // value tab: double-click a lit step = its value back to default (P-LOCK tab: lock removed)
@@ -2806,7 +2832,8 @@ press && dbl ? (
   : hreg == 7 ? (snap(); HV[hp] = 0; sprintf(#rd, "PART %d · HUMANIZE VEL 0%%", hp + 1); msgt = now; bump();)
   : hreg == 8 ? (setgsw(50);)
   : hreg >= 11 && hreg <= 18 ? (snap(); setfld(hreg - 10, deffld(hreg - 10)); bump();)
-  : hreg == 66 ? (ramt = 50; strcpy(#rd, "AMOUNT 50%"); msgt = now;)
+  : hreg == 66 ? (ramt = 50; sprintf(#rd, "%s 50%%", ramtn()); msgt = now;)
+  : hreg == 85 ? (ginten = 50; strcpy(#rd, "INTENSITY 50%"); msgt = now;)   // v1.1.3
   : hreg == 91 || hreg == 96 ? (snap(); AC[64] = 16; msgacl(); bump();)
   : hreg == 92 ? (snap(); AC[65] = 2; msgacl(); bump();)
   : hreg == 93 ? (snap(); acset(acsel, acsel == 0 ? 40 : 0); msgacl(); bump();)
@@ -2815,7 +2842,9 @@ press && dbl ? (
 );
 
 press ? (
-  inr(RCX + RRW + S(4), PGY, RCW - RRW - S(4), PGH) ? (
+  inr(RCX + RRW + S(4), PGY, RCW - RRW - S(4), PGH) && alt ? (   // v1.1.3: Alt+click CAL = compensation 0 ms
+    calon = 0; slider18 = 0; slider_automate(slider18); strcpy(#rd, "TAP RECORD COMPENSATION 0 ms"); msgt = now;
+  ) : inr(RCX + RRW + S(4), PGY, RCW - RRW - S(4), PGH) ? (
     calon = !calon; caln = 0; calsum = 0;
     calon ? strcpy(#rd, "CAL · play, then tap a pad on every BEAT · 8 taps") : strcpy(#rd, "CAL CANCELLED");
     msgt = now;
@@ -2828,7 +2857,8 @@ press ? (
   ) : inr(HB2X, HBY1, HBW, HBH) ? (
     ffree ? (slider4 = (slider4 >= 0.5 ? 0 : 1); slider_automate(slider4););
   ) : inr(HBX, HBY2, HBW, HBH) ? (
-    ffree && slider3 >= 0.5 ? (drag = 4; dsy = mouse_y; dsv = slider2;);
+    ffree && slider3 >= 0.5 ? (alt ? (slider2 = 120; slider_automate(slider2); strcpy(#rd, "BPM 120"); msgt = now;)   // v1.1.3 Alt = 120
+                                   : (drag = 4; dsy = mouse_y; dsv = slider2;););
   ) : inr(HB2X, HBY2, HBW, HBH) ? (
     ffree ? (slider3 = (slider3 >= 0.5 ? 0 : 1); slider_automate(slider3););
   ) : inr(HB3X, HBY1, HBW, HBH) ? (
@@ -2871,6 +2901,10 @@ press ? (
     tab = tabhit; sprintf(#rd, "VIEW · %s", tabname(tab)); msgt = now;
   ) : smt >= 0 ? (
     smode = smt;
+  ) : hreg == 66 && alt ? (   // v1.1.3: Alt = default (AMOUNT 50 %, WHAT = STEPS)
+    ramt = 50; sprintf(#rd, "%s 50%%", ramtn()); msgt = now;
+  ) : hreg == 65 && alt ? (
+    rwhat = 0; sprintf(#rd, "RANDOMIZE · %s", wname(rwhat)); msgt = now;
   ) : hreg >= 61 && hreg <= 69 ? (
     genpress(hreg);
   ) : hreg == 84 ? (
@@ -2922,7 +2956,7 @@ press ? (
   ) : hreg == 27 ? (
     alt ? setev(0) : setev(((slider19 | 0) + 1) % 5);
   ) : hreg == 28 ? (
-    setevc((slider20 | 0) % 3 + 1);
+    alt ? setevc(2) : setevc((slider20 | 0) % 3 + 1);   // v1.1.3 Alt = default 2
   ) : hreg == 29 ? (
     shift ? (slider21 = 63; slider_automate(slider21); strcpy(#rd, "EVOLVE · ALL PARTS MAY CHANGE"); msgt = now;) : evtog(evpc);
   ) : hreg == 26 ? (
@@ -2948,6 +2982,8 @@ press ? (
     focus = hp; snap(); drag = 3; dlane = hp; dall = shift; dsy = mouse_y; dsv = RATE[hp]; msgrate(hp);
   ) : hreg == 5 ? (
     focus = hp; snap(); drag = 5; dlane = hp; dall = shift; dsy = mouse_y; dsv = LEN[hp]; msglen(hp);
+  ) : hreg == 2 && alt ? (   // v1.1.3: Alt+click length strip = 16 (like the LEN box)
+    focus = hp; dall = shift; snap(); setlen(hp, 16); msglen(hp); bump();
   ) : hreg == 2 ? (
     focus = hp; snap(); drag = 2; dlane = hp; dall = shift;
   ) : hreg == 6 || hreg == 7 ? (
@@ -2976,7 +3012,7 @@ press ? (
         : (drag = hreg; dsy = mouse_y; dsv = getfld(hreg - 10); dlastv = dsv;);
   ) : hreg == 3 ? (
     focus = hp; s = page * 16 + hk; idx = hp * NSTEP + s;
-    alt ? (
+    alt && tab == 0 ? (   // v1.1.4: lane-ends-here only in STEPS; value tabs: Alt paints the default (tpaint)
       dall = shift; snap(); setlen(hp, s + 1); msglen(hp); bump();
     ) : ctrl ? (
       // Ctrl: click = add/remove one step, drag = rectangle (added to the selection)
@@ -3009,12 +3045,32 @@ rpress && chit ? (chainmenu(););
 rpress && chslot >= 0 && chslot < chlen ? (chslotmenu(chslot););   // v0.58.4: right-click a chain entry = same menu as left-click (no silent delete)
 rpress && fphit ? (fpmenu(););
 rpress && thhit ? (thmenu(););
-rpress && inr(RCX + RRW + S(4), PGY, RCW - RRW - S(4), PGH) ? (
-  calon = 0; slider18 = 0; slider_automate(slider18); strcpy(#rd, "TAP RECORD COMPENSATION 0 ms"); msgt = now;
+rpress && inr(RCX + RRW + S(4), PGY, RCW - RRW - S(4), PGH) ? (   // v1.1.3: menu instead of a silent reset
+  sprintf(#m, "[  TAP RECORD COMPENSATION %d ms  ]|Reset to 0 ms", slider18); gfx_x = mouse_x; gfx_y = mouse_y;
+  gfx_showmenu(#m) == 2 ? (calon = 0; slider18 = 0; slider_automate(slider18); strcpy(#rd, "TAP RECORD COMPENSATION 0 ms"); msgt = now;);
 );
 rpress ? (
   hreg == 0 && inr(HB3X, HBY2, HBW, HBH) ? (
     afmenu();   // v0.51: right-click FILL = AUTO FILL
+  ) : hreg == 0 && ffree && slider3 >= 0.5 && inr(HBX, HBY2, HBW, HBH) ? (   // v1.1.3: BPM list
+    v = vmenu("BPM", 4, slider2); v > -1000 ? (slider2 = v; slider_automate(slider2); sprintf(#rd, "BPM %d", v); msgt = now;);
+  ) : tab == 5 && inr(PARX, TBY, PLPW, TBH) ? (   // v1.1.3: P-LOCK PARAM, same list as left-click
+    plkmenu();
+  ) : hreg == 6 || hreg == 7 ? (   // v1.1.3: humanize list
+    v = vmenu(hreg == 6 ? "HUMANIZE TIME" : "HUMANIZE VEL", 0, hreg == 6 ? HT[focus] : HV[focus]);
+    v > -1000 ? (snap(); hreg == 6 ? (HT[focus] = v;) : (HV[focus] = v;);
+                 sprintf(#rd, "PART %d · HUMANIZE %s %d%%", focus + 1, hreg == 6 ? "TIME" : "VEL", v); msgt = now; bump(););
+  ) : hreg == 61 ? (   // v1.1.3: Euclid hits list (no default: 0 hits would empty the lane)
+    v = vmenu("EUCLID HITS", 3, EUH[focus]);
+    v > -1000 ? (snap(); EUH[focus] = min(LEN[focus], v); euapply(focus); msgeu(); bump(););
+  ) : hreg == 66 ? (
+    v = vmenu(ramtn(), 1, ramt); v > -1000 ? (ramt = v; sprintf(#rd, "%s %d%%", ramtn(), ramt); msgt = now;);
+  ) : hreg == 85 ? (
+    v = vmenu("INTENSITY", 1, ginten); v > -1000 ? (ginten = v; sprintf(#rd, "INTENSITY %d%%", ginten); msgt = now;);
+  ) : hreg == 93 ? (
+    v = vmenu(acname(acsel), 2, acget(acsel)); v > -1000 ? (snap(); acset(acsel, v); msgacl(); bump(););
+  ) : hreg == 2 ? (   // v1.1.3: length strip = same list as the LEN box
+    dall = shift; lenmenu(hp);
   ) : hreg == 100 ? (
     kslotmenu(kslot);
   ) : hreg == 90 ? (
@@ -3346,7 +3402,7 @@ gfx_gradrect(0, 0, gfx_w, gfx_h, bg_r, bg_g, bg_b, 1, 0, 0, 0, 0, (gfx_r - bg_r)
 // ---- title + theme ----
 gfx_setfont(1, "Bahnschrift", CF(S(26)), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(6));
 gfx_setfont(3, "Bahnschrift", CF(S(13)), 'b'); rc(K_ACC, 1); txt("S E Q U E N C E R", MG + S(1), MG + S(36));
-gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.1.1 · classic", MG + S(1), MG + S(54));   // bump on every change
+gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.1.4 · classic", MG + S(1), MG + S(54));   // bump on every change
 
 // ---- readout ----
 rc(K_RDB, 1); gfx_rect(RDX, MG, RDW, HDH);
@@ -3803,7 +3859,7 @@ skin ? (
   rc(K_BG2, 1);
   gfx_setfont(1, #sf, S(36), 'b'); txt("VOLCA", S(16), HDY + S(4)); txt("DRUM", S(16), HDY + S(34));
   sfont(3, S(14)); slcur_ = 0; txt("S E Q U E N C E R", S(17), HDY + S(68));
-  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.1.1 · sleeve", S(17), HDY + S(86));   // bump on every change
+  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.1.4 · sleeve", S(17), HDY + S(86));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch in the title block, like Classic; hover = name in the status
   rc(K_BG2, lkhit ? 1 : 0.75); frame2(LKX, THY, LKW, THH, S(2)); gfx_rect(LKX + S(4), THY + S(4), (LKW - S(8)) / 2, THH - S(8));
   rc(K_BG2, 1); gfx_rect(THX, THY, THW, THH); rc(K_ACC, 1); gfx_rect(THX + S(3), THY + S(3), THW - S(6), THH - S(6));
