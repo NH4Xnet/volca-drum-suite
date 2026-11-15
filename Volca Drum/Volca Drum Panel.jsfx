@@ -1,5 +1,5 @@
 desc:Volca Drum Panel
-// VOLCA DRUM PANEL 2.0 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// VOLCA DRUM PANEL 2.1.3 by NH4X - editor + display for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
@@ -333,6 +333,109 @@ function compshort(c, x, s) (
            strcpy(s, x == 0 ? "LIN" : x == 1 ? "EXP" : "MUL");
 );
 
+// ---- real units (2026-11-15): measured on the Volca (vdcf 1.22), part 1 layer 1 SINE, LIN EG, RISE-FALL mod
+// (test recordings of a sine at many CC values). Values between the measured points are interpolated
+// (pitch + times on a log scale). Other EG / MOD types: the times get a "~", OSC / RND mod and noise pitch stay numbers.
+function unpc(i) ( i == 0 ? 0 : i == 1 ? 4 : i == 2 ? 8 : i == 3 ? 10 : i == 4 ? 11 : i == 5 ? 12 : i == 6 ? 14 : i == 7 ? 16 :
+  i == 8 ? 20 : i == 9 ? 24 : i == 35 ? 127 : 28 + (i - 10) * 4; );
+function unph(i) ( i == 0 ? 20.00 : i == 1 ? 24.41 : i == 2 ? 37.64 : i == 3 ? 47 : i == 4 ? 53 : i == 5 ? 59.69 : i == 6 ? 74 :
+  i == 7 ? 90.56 : i == 8 ? 130.24 : i == 9 ? 178.75 : i == 10 ? 236.08 : i == 11 ? 302.22 : i == 12 ? 377.19 : i == 13 ? 460.97 :
+  i == 14 ? 553.58 : i == 15 ? 655.00 : i == 16 ? 765.25 : i == 17 ? 884.31 : i == 18 ? 1012.19 : i == 19 ? 1148.89 :
+  i == 20 ? 1294.41 : i == 21 ? 1448.75 : i == 22 ? 1611.91 : i == 23 ? 1783.89 : i == 24 ? 1964.69 : i == 25 ? 2154.31 :
+  i == 26 ? 2352.75 : i == 27 ? 2560.01 : i == 28 ? 2776.08 : i == 29 ? 3000.98 : i == 30 ? 3234.70 : i == 31 ? 3477.23 :
+  i == 32 ? 3728.59 : i == 33 ? 3988.76 : i == 34 ? 4257.76 : 4500.36; );
+// log interpolation between (x0, y0) and (x1, y1)
+function unli(v, x0, y0, x1, y1) ( exp(log(y0) + (v - x0) / max(1, x1 - x0) * (log(y1) - log(y0))) );
+function unhz(v) local(i) ( v = max(0, min(127, v)); i = 0; while (i < 34 && unpc(i + 1) < v) (i += 1;); unli(v, unpc(i), unph(i), unpc(i + 1), unph(i + 1)); );
+// attack: ms to peak at CC 0, 16, ... 112, 127
+function unac(i) ( i == 8 ? 127 : i * 16 );
+function unam(i) ( i == 0 ? 2 : i == 1 ? 4 : i == 2 ? 8 : i == 3 ? 40 : i == 4 ? 133 : i == 5 ? 320 : i == 6 ? 599 : i == 7 ? 878 : 996; );
+function unatt(v) local(i) ( v = max(0, min(127, v)); i = 0; while (i < 7 && unac(i + 1) < v) (i += 1;); unli(v, unac(i), unam(i), unac(i + 1), unam(i + 1)); );
+// release: ms to -20 dB (w = 0) / -40 dB (w = 1) at CC 32, 40, ... 112, 127; below 32 = shorter than 31 ms
+function unrc(i) ( i == 11 ? 127 : 32 + i * 8 );
+function unr2(i) ( i == 0 ? 15 : i == 1 ? 33 : i == 2 ? 56 : i == 3 ? 91 : i == 4 ? 155 : i == 5 ? 240 : i == 6 ? 356 : i == 7 ? 498 :
+  i == 8 ? 656 : i == 9 ? 813 : i == 10 ? 946 : 1060; );
+function unr4(i) ( i == 0 ? 31 : i == 1 ? 64 : i == 2 ? 125 : i == 3 ? 214 : i == 4 ? 363 : i == 5 ? 574 : i == 6 ? 855 : i == 7 ? 1204 :
+  i == 8 ? 1589 : i == 9 ? 1976 : i == 10 ? 2301 : 2587; );
+function unrel(v, w) local(i) ( v = max(32, min(127, v)); i = 0; while (i < 10 && unrc(i + 1) < v) (i += 1;);
+  w ? unli(v, unrc(i), unr4(i), unrc(i + 1), unr4(i + 1)) : unli(v, unrc(i), unr2(i), unrc(i + 1), unr2(i + 1)); );
+// rise-fall sweep: start offset in semitones (measured at rate 32, linear between points), 64 = none
+function unma(i) ( i == 0 ? 0 : i == 1 ? 32 : i == 2 ? 64 : i == 3 ? 80 : i == 4 ? 96 : i == 5 ? 112 : 127; );
+function unms(i) ( i == 0 ? -13 : i == 1 ? -18 : i == 2 ? 0 : i == 3 ? 14 : i == 4 ? 43 : i == 5 ? 64 : 78; );
+function unst(v) local(i) ( v = max(0, min(127, v)); i = 0; while (i < 5 && unma(i + 1) < v) (i += 1;);
+  unms(i) + (v - unma(i)) / (unma(i + 1) - unma(i)) * (unms(i + 1) - unms(i)); );
+// sweep speed: ms until the pitch is halfway back (rate 0 = slower than 1.2 s, 127 = no sweep)
+function unrt(v) ( v = max(0, min(127, v)); v < 32 ? unli(v, 0, 1200, 32, 105) : v < 64 ? unli(v, 32, 105, 64, 24) : v < 96 ? unli(v, 64, 24, 96, 10) : unli(v, 96, 10, 127, 3); );
+// sign as text (no plus flag in EEL sprintf)
+function unsg(x) ( x < 0 ? "-" : "+" );
+// note name of a MIDI note (C4 = 60, sharps)
+function unnn(m) local(c) ( c = m % 12; c == 0 ? "C" : c == 1 ? "C#" : c == 2 ? "D" : c == 3 ? "D#" : c == 4 ? "E" : c == 5 ? "F" :
+  c == 6 ? "F#" : c == 7 ? "G" : c == 8 ? "G#" : c == 9 ? "A" : c == 10 ? "A#" : "B"; );
+// time as text: ulg 1 = "155 ms" / "1.1 s", 0 = "155ms" / "1.1s", -1 = "155" / "1.1" (unit in #unu, drawn small)
+function untime(t, ulg, d) (
+  t < 1000 ? (ulg > 0 ? sprintf(d, "%d ms", floor(t + 0.5)) : ulg == 0 ? sprintf(d, "%dms", floor(t + 0.5)) : (strcpy(#unu, "ms"); sprintf(d, "%d", floor(t + 0.5)););)
+           : (ulg > 0 ? sprintf(d, "%.1f s", t / 1000) : ulg == 0 ? sprintf(d, "%.1fs", t / 1000) : (strcpy(#unu, "s"); sprintf(d, "%.1f", t / 1000);););
+);
+// value v of layer row k (1 LVL, 2 ATT, 3 REL, 4 PIT, 5 MOD, 6 RATE) as text into s.
+// sl = the layer's SELECT value, ov = the partner (k 5: MOD RATE, k 6: MOD AMOUNT), q = QPI on (PIT only).
+// ulg 1 = readout (long), 0 = cell (short), -1 = narrow cell (no unit letters). Returns 0 = no unit here (caller prints the number).
+function unfmt(k, v, sl, ov, q, ulg, s) local(n, src, mdt, eg, hz, m, c, a, t, r)
+(
+  n = floor(max(0, min(127, floor(sl + 0.5))) * 45 / 128); src = floor(n / 9); mdt = floor(n / 3) % 3; eg = n % 3;
+  v = max(0, min(127, floor(v + 0.5))); ov = max(0, min(127, floor(ov + 0.5)));
+  strcpy(#unx, eg > 0 && ulg >= 0 ? "~" : "");   // times measured with LIN EG
+  strcpy(#unu, "");   // ulg -1: the unit that goes after the number (small)
+  r = 1;
+  k == 1 ? (
+    v == 0 ? strcpy(s, ulg > 0 ? "OFF (silent)" : "off")
+    : ulg > 0 ? sprintf(s, "%.1f dB", 20 * log10(v / 127)) : ulg == 0 ? sprintf(s, "%ddB", floor(20 * log10(v / 127) + 0.5)) : (strcpy(#unu, "dB"); sprintf(s, "%d", floor(20 * log10(v / 127) + 0.5)););
+  ) : k == 2 ? (
+    untime(unatt(v), ulg, #uny); ulg > 0 ? sprintf(s, "%s%s to peak", #unx, #uny) : sprintf(s, "%s%s", #unx, #uny);
+  ) : k == 3 ? (
+    v <= 24 ? strcpy(s, ulg > 0 ? "CLICK (under 15 ms)" : "click")
+    : v < 32 ? strcpy(s, ulg > 0 ? "under 31 ms" : ulg == 0 ? "<31ms" : (strcpy(#unu, "ms"); "<31";))
+    : ulg > 0 ? (untime(unrel(v, 0), 1, #uny); untime(unrel(v, 1), 1, #unz); sprintf(s, "%s%s -20dB · %s -40dB", #unx, #uny, #unz);)
+    : (untime(unrel(v, 1), ulg, #uny); sprintf(s, "%s%s", #unx, #uny););
+  ) : k == 4 ? (
+    src >= 2 ? (r = 0;)   // noise: PITCH = filter cutoff, not measured
+    : (
+      hz = unhz(v); a = 69 + 12 * log(hz / 440) / log(2); m = floor(a + 0.5); c = floor((a - m) * 100 + 0.5);
+      ulg > 0 ? (
+        hz < 1000 ? sprintf(#uny, "%d Hz", floor(hz + 0.5)) : sprintf(#uny, "%.2f kHz", hz / 1000);
+        q ? sprintf(s, "QPI · knob %s%d %s%dc", unnn(m), floor(m / 12) - 1, unsg(c), abs(c))
+          : sprintf(s, "%s · %s%d %s%dc", #uny, unnn(m), floor(m / 12) - 1, unsg(c), abs(c));
+      ) : q ? strcpy(s, "QPI") : sprintf(s, "%s%d", unnn(m), floor(m / 12) - 1);
+    );
+  ) : k == 5 || k == 6 ? (
+    mdt != 0 ? (r = 0;)   // OSC / RND: not measured
+    : (
+      a = (k == 5 ? v : ov); t = (k == 6 ? v : ov);   // a = amount, t = rate
+      ulg > 0 ? (
+        a == 64 || t == 127 ? strcpy(s, "no sweep")
+        : (t == 0 ? strcpy(#unz, "over 1.2 s") : (untime(unrt(t), 1, #unz); sprintf(#unz, "~%s", #unz););
+           c = floor(unst(a) + 0.5); sprintf(s, "%s%d st / %s", unsg(c), abs(c), #unz););
+      ) : k == 5 ? (
+        v == 64 ? strcpy(s, "none") : (c = floor(unst(v) + 0.5); ulg == 0 ? sprintf(s, "%s%dst", unsg(c), abs(c)) : (strcpy(#unu, "st"); sprintf(s, "%s%d", unsg(c), abs(c));););
+      ) : (
+        v == 127 ? strcpy(s, "none") : v == 0 ? strcpy(s, ulg == 0 ? ">1.2s" : (strcpy(#unu, "s"); ">1.2";)) : untime(unrt(v), ulg, s);
+      );
+    );
+  ) : (r = 0;);
+  r;
+);
+// layer rows LVL ATT REL PIT MOD RATE of slider i in real units into s (ulg 1 = readout, 0 = cell); 0 = no unit (SELECT,
+// part / WG params, noise pitch, OSC / RND mod). unk = the row (1-6) of the last call
+function lunit(i, v, ulg, s) local(o, b, p) (
+  unk = 0;
+  i >= 1 && i <= 132 ? (
+    p = floor((i - 1) / 22); o = (i - 1) % 22;
+    o < 14 && o % 7 > 0 ? (
+      unk = o % 7; b = p * 22 + 1 + (o < 7 ? 0 : 7);
+      unfmt(unk, v, slider(b), unk == 5 ? slider(b + 6) : unk == 6 ? slider(b + 5) : 0, unk == 4 && slider(151 + p) >= 0.5, ulg, s);
+    ) : 0;
+  ) : 0;
+);
+
 function fmtval(i, v, s) local(mi, f) (
   mi = pm(i);
   issel(i) ? strcpy(s, selsrc(floor(floor(v * 45 / 128) / 9))) :
@@ -341,7 +444,7 @@ function fmtval(i, v, s) local(mi, f) (
   mi == 6 ? (v == 64 ? strcpy(s, "OFF") :
             v < 64 ? sprintf(s, "LP %d", floor((64 - v) * 100 / 64 + 0.5)) : sprintf(s, "HP %d", floor((v - 64) * 100 / 63 + 0.5))) :
   mi == 7 ? strcpy(s, v < 64 ? "SOFT" : "HARD") :
-  sprintf(s, "%d", v);
+  !lunit(i, v, 0, s) ? sprintf(s, "%d", v);   // v2.1: layer rows in real units
 );
 
 function markchange(i) (
@@ -850,8 +953,9 @@ function gbtn(x, y, w, h) local(r1, g1, b1) (
 // small toggle / segment button in both looks; on = focus color
 function tbtn(x, y, w, h, s, on, fs) (
   skin ? (
-    on ? (rc(K_FOC, 1); gfx_rect(x, y, w, h);) : (rc(K_PLY, 1); frame2(x, y, w, h, S(2)););
-    sfont(3, fs); on ? rc(K_FOCT, 1) : rc(K_PLY, 1); ctxt(s, x, y + (h - fs * SFK) / 2, w);
+    // v2.1.3: tbinv = 1 = the button sits on the focus-filled part header: on = inverted (light fill, focus letter)
+    on ? (tbinv ? rc(K_FOCT, 1) : rc(K_FOC, 1); gfx_rect(x, y, w, h);) : (tbinv ? rc(K_FOCT, 1) : rc(K_PLY, 1); frame2(x, y, w, h, S(2)););
+    sfont(3, fs); on ? (tbinv ? rc(K_FOC, 1) : rc(K_FOCT, 1);) : (tbinv ? rc(K_FOCT, 1) : rc(K_PLY, 1);); ctxt(s, x, y + (h - fs * SFK) / 2, w);
   ) : (
     on ? (rc(K_FOC, 0.85); gfx_rect(x, y, w, h);) : (rc(K_FLD, 1); gfx_rect(x, y, w, h); rc(K_FLDB, 1); frame(x, y, w, h););
     gfx_setfont(3, "Bahnschrift", CF(fs), 'b'); on ? rc(K_FOCT, 1) : rc(K_LBL, 1); ctxt(s, x, y + (h - CF(fs)) / 2 - 1, w);
@@ -866,6 +970,18 @@ function playbtn(p, x, y, w, h) local(fl, cx, cy) (
   cx = x + w / 2; cy = y + h / 2;
   rc(fl > 0.5 ? K_BG2 : K_TXT, 1);
   gfx_triangle(cx - S(3), cy - S(4), cx - S(3), cy + S(4), cx + S(4), cy);
+);
+
+// v2.1.2: number in string 20 (font 5 at size fz is set) right-aligned at xr, its unit #unu after it in a small font;
+// no room in mw = number only. Cell text box: y .. y + h
+function cellu(xr, y, mw, h, fz) local(tw, th, uw, uh, a0) (
+  gfx_measurestr(20, tw, th);
+  skin ? sfont(8, floor(fz * 0.62)) : gfx_setfont(8, "Consolas", floor(fz * 0.62));
+  uw = 0; uh = 0; strlen(#unu) > 0 ? gfx_measurestr(#unu, uw, uh);
+  tw + uw + S(1) > mw ? (uw = 0;);
+  uw > 0 ? (a0 = gfx_a; gfx_a = a0 * 0.7; gfx_x = xr - uw; gfx_y = y + (h + th) / 2 - uh - S(1); gfx_drawstr(#unu); gfx_a = a0;);
+  skin ? sfont(5, fz) : gfx_setfont(5, "Consolas", fz);
+  gfx_x = xr - tw - (uw > 0 ? uw + S(1) : 0); gfx_y = y + (h - th) / 2; gfx_drawstr(20);
 );
 
 // kind: 1 = layer 1, 2 = layer 2, 3 = part, 4 = waveguide
@@ -894,10 +1010,11 @@ function drawbar(i, x, y, wi, h, kind) local(v, f, hot, tw, th) (
         f >= 0 ? gfx_rect(x + wi / 2, y, max(1, f), h) : gfx_rect(x + wi / 2 + f, y, -f, h);
         rc(K_PLY, 0.5); gfx_rect(x + wi / 2, y, 1, h);
       ) : gfx_rect(x, y, max(1, v / 127 * wi), h);
-      sfont(5, kind <= 2 ? S(15) : kind == 4 ? S(17) : S(14));
+      fz = kind <= 2 ? S(15) : kind == 4 ? S(17) : S(14);
+      sfont(5, fz);
       rc(K_TXT, 1);
-      gfx_measurestr(20, tw, th);
-      txt(20, x + wi - tw - S(4), y + (h - th) / 2);
+      lunit(i, v, -1, 20) ? cellu(x + wi - S(4), y, wi - S(8), h, fz)   // v2.1.2: number + small unit
+      : (gfx_measurestr(20, tw, th); txt(20, x + wi - tw - S(4), y + (h - th) / 2););
     );
     lockm[i] ? (rc(K_HOT, 1); gfx_rect(x, y, S(3), h););
   ) : (
@@ -928,7 +1045,8 @@ function drawbar(i, x, y, wi, h, kind) local(v, f, hot, tw, th) (
       i == 133 ? rc(K_BG2, 1) : rc(K_TXT, 0.95);
       // WG Model switch: name centred in the lit half (TUBE left, STRING right), dark text on the light half
       i == 133 ? txt(20, (v < 64 ? x : x + wi / 2) + (wi / 2 - tw) / 2, y + (h - th) / 2)
-               : txt(20, x + wi - tw - S(3), y + (h - th) / 2);
+      : lunit(i, v, -1, 20) ? cellu(x + wi - S(3), y, wi - S(8), h, min(CF(S(14)), h))   // v2.1.2: number + small unit
+      : txt(20, x + wi - tw - S(3), y + (h - th) / 2);
     );
   );
 );
@@ -1009,7 +1127,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   // title block
   gfx_setfont(1, "Bahnschrift", floor(S(20) * 1.2 + 0.5), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(2));
   gfx_setfont(3, "Bahnschrift", floor(S(12) * 1.2 + 0.5), 'b'); rc(K_ACC, 1); txt("P A N E L", MG + S(1), MG + S(29));
-  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v2.0 · classic", MG + S(1), MG + S(47));   // bump on every change
+  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v2.1.3 · classic", MG + S(1), MG + S(47));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch (accent color), like the sequencer; hover = name in the readout
   rc(K_LBL, 0.8); frame(LKBX, LKBY, LCW, LKBH); gfx_rect(LKBX + S(3), LKBY + S(3), (LCW - S(6)) / 2, LKBH - S(6));
   rc(K_ACC, 1); gfx_rect(CLBX + S(2), CLBY + S(2), LCW - S(4), LKBH - S(4)); rc(K_LBL, 0.8); frame(CLBX, CLBY, LCW, LKBH);
@@ -1032,7 +1150,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   rc(K_PLY, 1); gfx_rect(0, 0, TTW, HDH);
   gfx_setfont(1, #sf, S(32), sfb); rc(K_BG2, 1); txt("VOLCA", S(12), S(2)); txt("DRUM", S(12), S(28));
   sfont(3, S(11)); txt("P A N E L", S(13), S(58));
-  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v2.0 · sleeve", S(13), S(72));   // bump on every change
+  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v2.1.3 · sleeve", S(13), S(72));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch
   rc(K_BG2, 0.8); frame2(LKBX, LKBY, LCW, LKBH, S(2)); gfx_rect(LKBX + S(4), LKBY + S(4), (LCW - S(8)) / 2, LKBH - S(8));
   rc(K_BG2, 1); gfx_rect(CLBX, CLBY, LCW, LKBH); rc(K_ACC, 1); gfx_rect(CLBX + S(3), CLBY + S(3), LCW - S(6), LKBH - S(6));
@@ -1067,9 +1185,11 @@ lastchg > 0 ? (
     k > 0 ? sprintf(30, "PART %d · LAYER %d · %s", p, k, longname((lastchg - 1) % 22 - (k - 1) * 7))
           : sprintf(30, "PART %d · %s", p, plong(pm(lastchg)));
   ) : sprintf(30, "WAVEGUIDE · %s", wlong(lastchg - 133));
-  tlen > 0 && tparam == lastchg ? sprintf(31, "TYPE %d_", tval) : (issel(lastchg) ? sellong(clampv(slider(lastchg)), 31) : fmtval(lastchg, clampv(slider(lastchg)), 31));
-  // fixed sizes (no jumping): Select combinations smaller so the longest fits
-  rfont(6, issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? S(24) : skin ? S(26) : S(38));
+  tlen > 0 && tparam == lastchg ? (sprintf(31, "TYPE %d_", tval); rdu = 0;)
+  : issel(lastchg) ? (sellong(clampv(slider(lastchg)), 31); rdu = 0;)
+  : (rdu = lunit(lastchg, clampv(slider(lastchg)), 1, 31); !rdu ? fmtval(lastchg, clampv(slider(lastchg)), 31););   // v2.1: real units
+  // fixed sizes (no jumping): Select combinations + the long unit texts (REL PIT MOD RATE) smaller so the longest fits
+  rfont(6, issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? S(24) : rdu && unk >= 3 ? S(24) : skin ? S(26) : S(38));
   gfx_measurestr(31, vw, vh);
   issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? (
     // Select: three fixed, left-aligned columns (SRC 8 chars · MOD 9 · EG 5), nothing moves
@@ -1283,8 +1403,10 @@ nl = 0; nv = 0;
     lkw = S(42); lkh = S(20); lkx[p] = cx + colw - lkw - S(3); lky[p] = y0 + S(3); lnkww = lkw; lnkhh = lkh;
     ptx[p] = cx; pty[p] = y0; ptw[p] = colw - lkw - S(32); pthh[p] = NUMH;
     qx[p] = lkx[p] - S(24); qy[p] = lky[p];   // Q = QPI button, left of LINK (hit test uses S(20) x lnkhh)
+    tbinv = act;   // v2.1.3: on the red focused header "on" is drawn inverted, else it vanishes into the header
     tbtn(qx[p], qy[p], S(20), lkh, "Q", slider(151 + p) >= 0.5, S(13));
     tbtn(lkx[p], lky[p], lkw, lkh, "LINK", slider(138 + p) >= 0.5, S(13));
+    tbinv = 0;
     playbtn(p, lkx[p], lky[p] + lkh + S(4), lkw, lkh);
     act ? (rc(K_FOCT, 1); frame(plx[p], ply[p], lkw, lkh);) : 0;
     // L1 / L2 header
@@ -1409,7 +1531,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
   rc(K_TXT, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
   gfx_setfont(4, "Bahnschrift", S(12), 'b');
-  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v2.0", wx + S(9), gfx_h - MG - S(16));
+  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v2.1.3", wx + S(9), gfx_h - MG - S(16));
 ) : (
   // Sleeve: section heads with a thick rule, flat rows (bigger text, the column has room)
   SLW = S(62);   // label column
@@ -1466,7 +1588,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("A-B", rdx, moy + (moh - th) / 2);
   rc(K_BAR, 0.6); gfx_rect(mox, moy, max(1, mm * mow), moh);
   sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th); rtxt(20, mox + mow - S(4), moy + (moh - th) / 2);
-  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v2.0", wx, gfx_h - MG - S(14));
+  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v2.1.3", wx, gfx_h - MG - S(14));
 );
 
 // ---- mouse ----

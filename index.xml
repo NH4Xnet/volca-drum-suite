@@ -38,6 +38,18 @@ Kit actions: Volca kit (save) / (kit +) / (kit -) / (send all), kit names in the
 UNDO also takes back a kit load and MORPH. Sends are paced by time. Fixes: typed values time out, locks after a sample-rate change, sound names starting with # ! > <.
 Installs the scripts too (Actions list: "Volca ...").]]></changelog>
       </version>
+      <version name="2.1.3" author="NH4X" time="2026-11-15T13:48:13Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20Drum%20Panel.jsfx</source>
+        <source file="Volca listener (start).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20listener%20%28start%29.lua</source>
+        <source file="Volca sound (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20sound%20%28save%29.lua</source>
+        <source file="Volca sound (load).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20sound%20%28load%29.lua</source>
+        <source file="Volca kit (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20kit%20%28save%29.lua</source>
+        <source file="Volca kit (kit +).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20kit%20%28kit%20%2B%29.lua</source>
+        <source file="Volca kit (kit -).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20kit%20%28kit%20-%29.lua</source>
+        <source file="Volca kit (send all).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20kit%20%28send%20all%29.lua</source>
+        <changelog><![CDATA[Values in real units, measured on a volca drum: LEVEL in dB, ATTACK / RELEASE in ms, PITCH in Hz + nearest note and cents (sine / saw; Q on shows QPI), rise-fall MOD / RATE as sweep in semitones / ms. Cells show the number with a small unit, the display the long form. Noise pitch, OSC / RND mod and the mix rows stay 0-127.
+Sleeve look: Q and LINK stay visible when on in the selected part.]]></changelog>
+      </version>
     </reapack>
     <reapack name="Volca Drum Sequencer.jsfx" type="effect" desc="Volca Drum Sequencer (step sequencer for the Korg volca drum)">
       <metadata>
@@ -53,6 +65,11 @@ Installs the scripts too (Actions list: "Volca ...").]]></changelog>
         <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0.1/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
         <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0.1/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
         <changelog><![CDATA[Fix: pitch locks only on lanes with PIT on. On PIT-off lanes they are blocked and not sent, and the PITCH tab can't be painted there.]]></changelog>
+      </version>
+      <version name="1.1.1" author="NH4X" time="2026-11-15T13:48:13Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
+        <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.1/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
+        <changelog><![CDATA[P-lock cells, the paint display and the step menu show LEVEL, ATTACK, RELEASE, PITCH, MOD and RATE locks in real units (dB, ms, note / Hz, semitones), like the panel. Needs the panel 2.1+ on the track.]]></changelog>
       </version>
     </reapack>
   </category>

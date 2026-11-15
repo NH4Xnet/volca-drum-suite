@@ -1,5 +1,5 @@
 desc:Volca Drum Sequencer
-// VOLCA DRUM SEQUENCER 1.0.1 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
+// VOLCA DRUM SEQUENCER 1.1.1 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
@@ -421,6 +421,8 @@ function decide(p, ix, key, li) local(t, r) (
 // plv = lock value of slot k at step base b (linked layer param: L1 lock, else L2 lock); acpv = ACCENT amount the same way
 function lnk(p) ( p < 6 && gmem[1720 + p] >= 0.5; );
 function lks(p, k) ( lnk(p) && k < 14 ? k % 7 : k; );
+// v1.1 (2026-11-15): P-LOCK cells, paint readout and step menu show L1/L2 LVL/ATT/REL/PIT/MOD/RATE locks in real units (measured, see unfmt)
+// v1.1.1 (2026-11-15): lock cells = number + the unit small after it
 // v1.0.1: L1/L2 PITCH locks + accent amounts are skipped on PIT lanes (QPI on: the note sets the pitch, a pitch CC leaves it off)
 function pqblk(p, k) ( (k == 4 || k == 11) && PON[p]; );
 function plv(p, b, k) local(j, w) ( pqblk(p, k) ? -1 : lnk(p) && k < 14 ? (j = k % 7; w = PL[b + j]; w < 0 ? (w = PL[b + j + 7];); w;) : PL[b + k]; );
@@ -1564,6 +1566,116 @@ function pname(k) (
               k == 20 ? "FILTER" : k == 21 ? "CLIP" : k == 22 ? "WG MODEL" : k == 23 ? "WG DECAY" : k == 24 ? "WG BODY" : "WG TUNE");
   #pn;
 );
+// ---- real units (2026-11-15): measured on the Volca (vdcf 1.22), part 1 layer 1 SINE, LIN EG, RISE-FALL mod
+// (test recordings of a sine at many CC values). Values between the measured points are interpolated
+// (pitch + times on a log scale). Other EG / MOD types: the times get a "~", OSC / RND mod and noise pitch stay numbers.
+function unpc(i) ( i == 0 ? 0 : i == 1 ? 4 : i == 2 ? 8 : i == 3 ? 10 : i == 4 ? 11 : i == 5 ? 12 : i == 6 ? 14 : i == 7 ? 16 :
+  i == 8 ? 20 : i == 9 ? 24 : i == 35 ? 127 : 28 + (i - 10) * 4; );
+function unph(i) ( i == 0 ? 20.00 : i == 1 ? 24.41 : i == 2 ? 37.64 : i == 3 ? 47 : i == 4 ? 53 : i == 5 ? 59.69 : i == 6 ? 74 :
+  i == 7 ? 90.56 : i == 8 ? 130.24 : i == 9 ? 178.75 : i == 10 ? 236.08 : i == 11 ? 302.22 : i == 12 ? 377.19 : i == 13 ? 460.97 :
+  i == 14 ? 553.58 : i == 15 ? 655.00 : i == 16 ? 765.25 : i == 17 ? 884.31 : i == 18 ? 1012.19 : i == 19 ? 1148.89 :
+  i == 20 ? 1294.41 : i == 21 ? 1448.75 : i == 22 ? 1611.91 : i == 23 ? 1783.89 : i == 24 ? 1964.69 : i == 25 ? 2154.31 :
+  i == 26 ? 2352.75 : i == 27 ? 2560.01 : i == 28 ? 2776.08 : i == 29 ? 3000.98 : i == 30 ? 3234.70 : i == 31 ? 3477.23 :
+  i == 32 ? 3728.59 : i == 33 ? 3988.76 : i == 34 ? 4257.76 : 4500.36; );
+// log interpolation between (x0, y0) and (x1, y1)
+function unli(v, x0, y0, x1, y1) ( exp(log(y0) + (v - x0) / max(1, x1 - x0) * (log(y1) - log(y0))) );
+function unhz(v) local(i) ( v = max(0, min(127, v)); i = 0; while (i < 34 && unpc(i + 1) < v) (i += 1;); unli(v, unpc(i), unph(i), unpc(i + 1), unph(i + 1)); );
+// attack: ms to peak at CC 0, 16, ... 112, 127
+function unac(i) ( i == 8 ? 127 : i * 16 );
+function unam(i) ( i == 0 ? 2 : i == 1 ? 4 : i == 2 ? 8 : i == 3 ? 40 : i == 4 ? 133 : i == 5 ? 320 : i == 6 ? 599 : i == 7 ? 878 : 996; );
+function unatt(v) local(i) ( v = max(0, min(127, v)); i = 0; while (i < 7 && unac(i + 1) < v) (i += 1;); unli(v, unac(i), unam(i), unac(i + 1), unam(i + 1)); );
+// release: ms to -20 dB (w = 0) / -40 dB (w = 1) at CC 32, 40, ... 112, 127; below 32 = shorter than 31 ms
+function unrc(i) ( i == 11 ? 127 : 32 + i * 8 );
+function unr2(i) ( i == 0 ? 15 : i == 1 ? 33 : i == 2 ? 56 : i == 3 ? 91 : i == 4 ? 155 : i == 5 ? 240 : i == 6 ? 356 : i == 7 ? 498 :
+  i == 8 ? 656 : i == 9 ? 813 : i == 10 ? 946 : 1060; );
+function unr4(i) ( i == 0 ? 31 : i == 1 ? 64 : i == 2 ? 125 : i == 3 ? 214 : i == 4 ? 363 : i == 5 ? 574 : i == 6 ? 855 : i == 7 ? 1204 :
+  i == 8 ? 1589 : i == 9 ? 1976 : i == 10 ? 2301 : 2587; );
+function unrel(v, w) local(i) ( v = max(32, min(127, v)); i = 0; while (i < 10 && unrc(i + 1) < v) (i += 1;);
+  w ? unli(v, unrc(i), unr4(i), unrc(i + 1), unr4(i + 1)) : unli(v, unrc(i), unr2(i), unrc(i + 1), unr2(i + 1)); );
+// rise-fall sweep: start offset in semitones (measured at rate 32, linear between points), 64 = none
+function unma(i) ( i == 0 ? 0 : i == 1 ? 32 : i == 2 ? 64 : i == 3 ? 80 : i == 4 ? 96 : i == 5 ? 112 : 127; );
+function unms(i) ( i == 0 ? -13 : i == 1 ? -18 : i == 2 ? 0 : i == 3 ? 14 : i == 4 ? 43 : i == 5 ? 64 : 78; );
+function unst(v) local(i) ( v = max(0, min(127, v)); i = 0; while (i < 5 && unma(i + 1) < v) (i += 1;);
+  unms(i) + (v - unma(i)) / (unma(i + 1) - unma(i)) * (unms(i + 1) - unms(i)); );
+// sweep speed: ms until the pitch is halfway back (rate 0 = slower than 1.2 s, 127 = no sweep)
+function unrt(v) ( v = max(0, min(127, v)); v < 32 ? unli(v, 0, 1200, 32, 105) : v < 64 ? unli(v, 32, 105, 64, 24) : v < 96 ? unli(v, 64, 24, 96, 10) : unli(v, 96, 10, 127, 3); );
+// sign as text (no plus flag in EEL sprintf)
+function unsg(x) ( x < 0 ? "-" : "+" );
+// note name of a MIDI note (C4 = 60, sharps)
+function unnn(m) local(c) ( c = m % 12; c == 0 ? "C" : c == 1 ? "C#" : c == 2 ? "D" : c == 3 ? "D#" : c == 4 ? "E" : c == 5 ? "F" :
+  c == 6 ? "F#" : c == 7 ? "G" : c == 8 ? "G#" : c == 9 ? "A" : c == 10 ? "A#" : "B"; );
+// time as text: ulg 1 = "155 ms" / "1.1 s", 0 = "155ms" / "1.1s", -1 = "155" / "1.1" (unit in #unu, drawn small)
+function untime(t, ulg, d) (
+  t < 1000 ? (ulg > 0 ? sprintf(d, "%d ms", floor(t + 0.5)) : ulg == 0 ? sprintf(d, "%dms", floor(t + 0.5)) : (strcpy(#unu, "ms"); sprintf(d, "%d", floor(t + 0.5)););)
+           : (ulg > 0 ? sprintf(d, "%.1f s", t / 1000) : ulg == 0 ? sprintf(d, "%.1fs", t / 1000) : (strcpy(#unu, "s"); sprintf(d, "%.1f", t / 1000);););
+);
+// value v of layer row k (1 LVL, 2 ATT, 3 REL, 4 PIT, 5 MOD, 6 RATE) as text into s.
+// sl = the layer's SELECT value, ov = the partner (k 5: MOD RATE, k 6: MOD AMOUNT), q = QPI on (PIT only).
+// ulg 1 = readout (long), 0 = cell (short), -1 = narrow cell (no unit letters). Returns 0 = no unit here (caller prints the number).
+function unfmt(k, v, sl, ov, q, ulg, s) local(n, src, mdt, eg, hz, m, c, a, t, r)
+(
+  n = floor(max(0, min(127, floor(sl + 0.5))) * 45 / 128); src = floor(n / 9); mdt = floor(n / 3) % 3; eg = n % 3;
+  v = max(0, min(127, floor(v + 0.5))); ov = max(0, min(127, floor(ov + 0.5)));
+  strcpy(#unx, eg > 0 && ulg >= 0 ? "~" : "");   // times measured with LIN EG
+  strcpy(#unu, "");   // ulg -1: the unit that goes after the number (small)
+  r = 1;
+  k == 1 ? (
+    v == 0 ? strcpy(s, ulg > 0 ? "OFF (silent)" : "off")
+    : ulg > 0 ? sprintf(s, "%.1f dB", 20 * log10(v / 127)) : ulg == 0 ? sprintf(s, "%ddB", floor(20 * log10(v / 127) + 0.5)) : (strcpy(#unu, "dB"); sprintf(s, "%d", floor(20 * log10(v / 127) + 0.5)););
+  ) : k == 2 ? (
+    untime(unatt(v), ulg, #uny); ulg > 0 ? sprintf(s, "%s%s to peak", #unx, #uny) : sprintf(s, "%s%s", #unx, #uny);
+  ) : k == 3 ? (
+    v <= 24 ? strcpy(s, ulg > 0 ? "CLICK (under 15 ms)" : "click")
+    : v < 32 ? strcpy(s, ulg > 0 ? "under 31 ms" : ulg == 0 ? "<31ms" : (strcpy(#unu, "ms"); "<31";))
+    : ulg > 0 ? (untime(unrel(v, 0), 1, #uny); untime(unrel(v, 1), 1, #unz); sprintf(s, "%s%s -20dB · %s -40dB", #unx, #uny, #unz);)
+    : (untime(unrel(v, 1), ulg, #uny); sprintf(s, "%s%s", #unx, #uny););
+  ) : k == 4 ? (
+    src >= 2 ? (r = 0;)   // noise: PITCH = filter cutoff, not measured
+    : (
+      hz = unhz(v); a = 69 + 12 * log(hz / 440) / log(2); m = floor(a + 0.5); c = floor((a - m) * 100 + 0.5);
+      ulg > 0 ? (
+        hz < 1000 ? sprintf(#uny, "%d Hz", floor(hz + 0.5)) : sprintf(#uny, "%.2f kHz", hz / 1000);
+        q ? sprintf(s, "QPI · knob %s%d %s%dc", unnn(m), floor(m / 12) - 1, unsg(c), abs(c))
+          : sprintf(s, "%s · %s%d %s%dc", #uny, unnn(m), floor(m / 12) - 1, unsg(c), abs(c));
+      ) : q ? strcpy(s, "QPI") : sprintf(s, "%s%d", unnn(m), floor(m / 12) - 1);
+    );
+  ) : k == 5 || k == 6 ? (
+    mdt != 0 ? (r = 0;)   // OSC / RND: not measured
+    : (
+      a = (k == 5 ? v : ov); t = (k == 6 ? v : ov);   // a = amount, t = rate
+      ulg > 0 ? (
+        a == 64 || t == 127 ? strcpy(s, "no sweep")
+        : (t == 0 ? strcpy(#unz, "over 1.2 s") : (untime(unrt(t), 1, #unz); sprintf(#unz, "~%s", #unz););
+           c = floor(unst(a) + 0.5); sprintf(s, "%s%d st / %s", unsg(c), abs(c), #unz););
+      ) : k == 5 ? (
+        v == 64 ? strcpy(s, "none") : (c = floor(unst(v) + 0.5); ulg == 0 ? sprintf(s, "%s%dst", unsg(c), abs(c)) : (strcpy(#unu, "st"); sprintf(s, "%s%d", unsg(c), abs(c));););
+      ) : (
+        v == 127 ? strcpy(s, "none") : v == 0 ? strcpy(s, ulg == 0 ? ">1.2s" : (strcpy(#unu, "s"); ">1.2";)) : untime(unrt(v), ulg, s);
+      );
+    );
+  ) : (r = 0;);
+  r;
+);
+// v1.1: p-lock value v of lock k on step ix of lane p as text into s (ulg 1 = readout / menu, 0 = cell, -1 = narrow cell).
+// L1/L2 LVL ATT REL PIT MOD RATE in real units when the panel is there (SELECT + MOD partner: the step's own lock, else the panel)
+function lkv(p, ix, k) local(w) ( w = PL[ix * NPL + k]; w >= 0 ? w % 128 : gmem[1000 + pidx(p, k)]; );
+function lktxt(p, ix, k, v, ulg, s) local(j, b) (
+  j = k % 7; b = k - j; strcpy(#unu, "");
+  !(pnl && p < 6 && k < 14 && j > 0 && unfmt(j, v, lkv(p, ix, b), j == 5 ? lkv(p, ix, b + 6) : j == 6 ? lkv(p, ix, b + 5) : 0, 0, ulg, s)) ? sprintf(s, "%d", v);
+);
+// v1.1.1: lock cell text centred in a cell at x (width CW), top y: number + its unit small after it (no room = number only).
+// fz = the cell font size, font 5 is set and the color too
+function lkcell(p, ix, k, v, x, y, fz) local(ctw_, cth_, cuw_, cuh_, ca0_, cx0_) (
+  lktxt(p, ix, k, v, -1, #t);
+  gfx_measurestr("0", ctw_, cth_); ctw_ = swid(#t);
+  cuw_ = 0; cuh_ = cth_;
+  strlen(#unu) > 0 ? (skin ? sfont(8, floor(fz * 0.62)) : gfx_setfont(8, "Consolas", floor(fz * 0.62)); gfx_measurestr("0", cuw_, cuh_); cuw_ = swid(#unu););
+  ctw_ + cuw_ + S(1) > CW - S(2) ? (cuw_ = 0;);
+  cx0_ = x + (CW - ctw_ - (cuw_ > 0 ? cuw_ + S(1) : 0)) / 2;
+  cuw_ > 0 ? (ca0_ = gfx_a; gfx_a = ca0_ * 0.7; gfx_x = cx0_ + ctw_ + S(1); gfx_y = y + cth_ - cuh_ - S(1); sdraw(#unu); gfx_a = ca0_;);
+  skin ? sfont(5, fz) : gfx_setfont(5, "Consolas", fz);
+  gfx_x = cx0_; gfx_y = y; sdraw(#t);
+);
 // v0.58.6 P-LOCK group (after the tabs are drawn): PARAM = value field with a ▼, VALUE | RANGE = 2-way switch, one frame around tab + both
 function plgroup(warn) local(ax, ay) (
   vbox(PARX, TBY, PLPW, TBH, pname(plk), hreg == 219, skin ? S(14) : S(12));
@@ -1716,8 +1828,9 @@ function stepmenu() local(r, i, ix, b, nl, k) (
   nl = 0; i = 0; loop(NPL, PL[ix * NPL + i] >= 0 ? (LKL[nl] = i; nl += 1;); i += 1;);
   nl == 0 ? strcat(#m, "#P-LOCKS: none") : (
     strcat(#m, ">P-LOCKS|");
-    i = 0; loop(nl, PL[ix * NPL + LKL[i]] >= 128 ? sprintf(#n, "Remove %s = %d ±%d|", pname(LKL[i]), PL[ix * NPL + LKL[i]] % 128, floor(PL[ix * NPL + LKL[i]] / 128))
-                                    : sprintf(#n, "Remove %s = %d|", pname(LKL[i]), PL[ix * NPL + LKL[i]]); strcat(#m, #n); i += 1;);
+    i = 0; loop(nl, lktxt(selp, ix, LKL[i], PL[ix * NPL + LKL[i]] % 128, 1, #lkt);   // v1.1: real units
+                          PL[ix * NPL + LKL[i]] >= 128 ? sprintf(#n, "Remove %s = %s ±%d|", pname(LKL[i]), #lkt, floor(PL[ix * NPL + LKL[i]] / 128))
+                                    : sprintf(#n, "Remove %s = %s|", pname(LKL[i]), #lkt); strcat(#m, #n); i += 1;);
     strcat(#m, "<Remove all p-locks of the selected steps");
   );
   strcat(#m, "|Clear extras  (slice, chance, condition, offset, p-locks)|Delete steps  (Del)");
@@ -2650,9 +2763,9 @@ function tpaint() local(k, kk, kend, s, ix, v, nv, lw, nop) (
     dlastk = k;
     ix = dlane * NSTEP + page * 16 + k;
     ON[ix] ? (
-      tab == 5 ? (lw = PL[ix * NPL + plk];
-                  lw >= 128 ? sprintf(#rd, "P%d STEP %02d · %s %d ±%d (random per hit)", dlane + 1, page * 16 + k + 1, pname(plk), lw % 128, floor(lw / 128))
-                  : lw >= 0 ? sprintf(#rd, "P%d STEP %02d · %s %d%s", dlane + 1, page * 16 + k + 1, pname(plk), lw, plrng ? " · RANGE 0" : "")
+      tab == 5 ? (lw = PL[ix * NPL + plk]; lw >= 0 ? lktxt(dlane, ix, plk, lw % 128, 1, #lkt);   // v1.1: real units
+                  lw >= 128 ? sprintf(#rd, "P%d STEP %02d · %s %s ±%d (random per hit)", dlane + 1, page * 16 + k + 1, pname(plk), #lkt, floor(lw / 128))
+                  : lw >= 0 ? sprintf(#rd, "P%d STEP %02d · %s %s%s", dlane + 1, page * 16 + k + 1, pname(plk), #lkt, plrng ? " · RANGE 0" : "")
                   : sprintf(#rd, "P%d STEP %02d · %s UNLOCKED", dlane + 1, page * 16 + k + 1, pname(plk));)
                : sprintf(#rd, "P%d STEP %02d · %s", dlane + 1, page * 16 + k + 1, fdesc(ix, tabfld(tab)));
       msgt = now;
@@ -3233,7 +3346,7 @@ gfx_gradrect(0, 0, gfx_w, gfx_h, bg_r, bg_g, bg_b, 1, 0, 0, 0, 0, (gfx_r - bg_r)
 // ---- title + theme ----
 gfx_setfont(1, "Bahnschrift", CF(S(26)), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(6));
 gfx_setfont(3, "Bahnschrift", CF(S(13)), 'b'); rc(K_ACC, 1); txt("S E Q U E N C E R", MG + S(1), MG + S(36));
-gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.0.1 · classic", MG + S(1), MG + S(54));   // bump on every change
+gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.1.1 · classic", MG + S(1), MG + S(54));   // bump on every change
 
 // ---- readout ----
 rc(K_RDB, 1); gfx_rect(RDX, MG, RDW, HDH);
@@ -3489,7 +3602,7 @@ loop(NP,
             // last value really sent (tick on the right edge): jumps every loop while playing
             yr_ = y + CH - S(1) - LKR[idx * NPL + plk] / 127 * (CH - S(2)); rc(K_TXT, 1); gfx_rect(x + CW - S(10), yr_ - S(1), S(8), S(3));
           );
-          rc(K_TXT, 0.95); sprintf(#t, "%d", lv); ctxt(#t, x, y + S(2), CW);
+          rc(K_TXT, 0.95); lkcell(p, idx, plk, lv, x, y + S(2), CF(S(11)));   // v1.1.1: number + small unit
           lr_ > 0 ? (sprintf(#t, "±%d", lr_); ctxt(#t, x, y + S(14), CW););
         ) : (rc(K_TXT, 0.35); ctxt("-", x, y + S(2), CW););
         pnl ? (pv = gmem[1000 + pidx(p, plk)]; rc(K_TXT, 0.6); gfx_rect(x + S(2), y + CH - S(1) - pv / 127 * (CH - S(2)), CW - S(4), 1););
@@ -3690,7 +3803,7 @@ skin ? (
   rc(K_BG2, 1);
   gfx_setfont(1, #sf, S(36), 'b'); txt("VOLCA", S(16), HDY + S(4)); txt("DRUM", S(16), HDY + S(34));
   sfont(3, S(14)); slcur_ = 0; txt("S E Q U E N C E R", S(17), HDY + S(68));
-  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.0.1 · sleeve", S(17), HDY + S(86));   // bump on every change
+  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.1.1 · sleeve", S(17), HDY + S(86));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch in the title block, like Classic; hover = name in the status
   rc(K_BG2, lkhit ? 1 : 0.75); frame2(LKX, THY, LKW, THH, S(2)); gfx_rect(LKX + S(4), THY + S(4), (LKW - S(8)) / 2, THH - S(8));
   rc(K_BG2, 1); gfx_rect(THX, THY, THW, THH); rc(K_ACC, 1); gfx_rect(THX + S(3), THY + S(3), THW - S(6), THH - S(6));
@@ -3925,7 +4038,7 @@ skin ? (
               // last value really sent (tick on the right edge): jumps every loop while playing
               yr_ = y + CH - LKR[idx * NPL + plk] / 127 * CH; rc(K_TXT, 1); gfx_rect(x + CW - S(10), yr_ - S(2), S(10), S(4));
             );
-            rc(K_TXT, 1); sprintf(#t, "%d", lv); ctxt(#t, x, y + S(3), CW);
+            rc(K_TXT, 1); lkcell(p, idx, plk, lv, x, y + S(3), S(17));   // v1.1.1: number + small unit
             lr_ > 0 ? (sfont(5, S(14)); sprintf(#t, "±%d", lr_); ctxt(#t, x, y + S(20), CW););
           ) : (rc(K_DIM, 1); ctxt("-", x, y + S(3), CW););
           pnl ? (pv = gmem[1000 + pidx(p, plk)]; rc(K_PLY, 0.8); gfx_rect(x, y + CH - pv / 127 * CH, CW, S(2)););
