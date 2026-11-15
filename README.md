@@ -8,11 +8,11 @@ By NH4X. Panel 2.0 · Sequencer 1.0.1. Music: https://nh4x.bandcamp.com/
 
 ## Contents
 
-<table>
+<table align="center">
 <tr>
-<th align="left" width="33%">Get started</th>
-<th align="left" width="33%">Use it</th>
-<th align="left" width="33%">Reference</th>
+<th align="left">Get started</th>
+<th align="left">Use it</th>
+<th align="left">Reference</th>
 </tr>
 <tr>
 <td valign="top">
