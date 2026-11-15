@@ -137,8 +137,36 @@ The panel and the sequencer need a small background helper to talk to each other
 
 Rest the mouse for a second on a control and the readout says what it does. **Ctrl+C / V / A / Z stay with REAPER**, so copy / paste / undo live in the right-click menus. Pattern data is saved with the project; REAPER presets of the sequencer = whole sequencer states.
 
+### How to use it
+
+| Action | How |
+|---|---|
+| Steps on / off | Click a step. Drag from an empty step = paint, from a lit step = erase |
+| Velocity | Mouse wheel on a lit step, or paint it in the **VELOCITY** tab. 63 = the panel's LEVEL, lower = ghost note, higher = accent |
+| Select steps | **Ctrl+click** = add, **Ctrl+drag** = box (across lanes too), **Shift+click** = range, **Esc** = none. The STEP tab and the right-click menu then change all selected steps |
+| Step values | **VIEW** tabs (VELOCITY, CHANCE, SLICE, OFFSET, PITCH, P-LOCK): drag across lit steps, the height sets the value. **Alt+drag** = back to default |
+| Copy / paste / undo | Right-click a step. **Del** deletes the selected steps |
+| Lane length / rate | **LEN** / **RATE** in the lane strip (drag, wheel, right-click = list), or drag in the thin strip above a lane. **Shift** = all six lanes |
+| Hear a part | Click the part name: it plays once |
+| Mute / solo | **M** / **S** in the lane strip. **Shift+click** = clear all |
+| Play a part melodically | **PIT** box in the lane strip = base note, then paint semitones in the **PITCH** tab. It switches the panel's **Q** on for that part |
+| P-lock | **P-LOCK** tab, pick the parameter in the field with ▼, paint by height. **RANGE** (next to it) paints a random range instead: a new value on every hit. **Alt+drag** removes locks |
+| Trigless step | Select steps, **TRIGLESS** button in the STEP tab: the step sends only its locks, no note, and changes a sound that is still ringing |
+| Conditions | **CONDITION** field in the STEP tab or the step's right-click menu. Example: snare on 14-16 set to **FILL** = a roll only while **FILL** is on |
+| Patterns | Click a pattern slot: while playing it switches at the next bar. Right-click = copy, paste, add to chain, fill pattern, clear / reset |
+| Chain | **Shift+click** pattern slots or click **+** in the song row, then **CHAIN** on: each entry plays one bar |
+| Song from regions | Name regions **P1 Verse**, **P2 Drop** … (P + 1-16 at the start), turn **REGIONS** on. Needs SYNC REAPER and the listener |
+| Kit per pattern | **KIT** tab: **GRAB KIT** stores the panel sound in the current pattern |
+| Starting grooves | **BEAT** tab: a whole groove from 28 styles · **GEN** tab: Euclid and randomize for one lane |
+| Feel | **FEEL** tab: groove template per lane, **EVOLVE**, **AUTO FILL** · header: **SWING**, **CHAOS**, **DENSITY** |
+| Clear / reset | **TOOLS** tab: top row keeps, bottom row removes. **CLEAR** keeps the settings, **RESET** = back to default. **NEW SESSION** empties all 16 patterns (asks first, no undo) |
+| Tap record | **REC** button (Classic look), then play the parts on MIDI channel 1-6. **CAL**: tap 8 beats and it learns your timing |
+| Default value | Double-click a value box |
+
+**Choke** (closed hat cuts open hat) is done in the volca itself: **FUNC + CHOKE** (step 8), then steps 1-6 switch it per part. The lowest part number wins.
+
 ### Duck trigger
-The DUCK row picks lanes that also send a trigger (C1 on MIDI channel 10). Select the tracks that should duck (bass, pads …) and run **Volca duck to selected tracks**: it adds a MIDI receive from the sequencer track (channel 10 > bus 2). Run it again on a track = receive removed. On the ducking track you need a plugin that ducks on MIDI notes, e.g. ShaperBox 3 (VST3): set its MIDI input to Bus 2 and turn on *Map REAPER MIDI buses to VST3 MIDI buses* in its pin menu.
+The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI channel 10). Select the tracks that should duck (bass, pads …) and run **Volca duck to selected tracks**: it adds a MIDI receive from the sequencer track (channel 10 > bus 2). Run it again on a track = receive removed. On the ducking track you need a plugin that ducks on MIDI notes, e.g. ShaperBox 3 (VST3): set its MIDI input to Bus 2 and turn on *Map REAPER MIDI buses to VST3 MIDI buses* in its pin menu.
 
 ## The panel
 
