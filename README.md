@@ -6,7 +6,11 @@ By NH4X. Panel 2.6.1 · Sequencer 1.1.5. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Panel: randomize a whole kit and watch every part change](VolcaDrumPanel.gif)
 
-![Volca Drum Sequencer in REAPER](sequencer-sleeve.png)
+<p align="center">
+  <a href="sequencer-sleeve.png"><img src="sequencer-sleeve.png" height="260" alt="Volca Drum Sequencer, Sleeve look"></a>
+  <a href="screenshot-sleeve.png"><img src="screenshot-sleeve.png" height="260" alt="Volca Drum Panel, Sleeve look"></a>
+  <br><sub>Sequencer · Panel (Sleeve look, click for full size)</sub>
+</p>
 
 ## Contents
 
@@ -212,8 +216,6 @@ Rest the mouse for a second on a control and the readout says what it does. **Ct
 The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI channel 10). Select the tracks that should duck (bass, pads …) and run **Volca duck to selected tracks**: it adds a MIDI receive from the sequencer track (channel 10 > bus 2). Run it again on a track = receive removed. On the ducking track you need a plugin that ducks on MIDI notes, e.g. ShaperBox 3 (VST3): set its MIDI input to Bus 2 and turn on *Map REAPER MIDI buses to VST3 MIDI buses* in its pin menu.
 
 ## The panel
-
-![The panel, Sleeve look](screenshot-sleeve.png)
 
 ![The panel, Classic look](screenshot.png)
 
