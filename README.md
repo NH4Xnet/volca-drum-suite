@@ -6,7 +6,7 @@ By NH4X. Panel 2.6.1 · Sequencer 1.1.5. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Panel: randomize a whole kit and watch every part change](VolcaDrumPanel.gif)
 
-![Volca Drum Sequencer in REAPER](sequencer-preview.png)
+![Volca Drum Sequencer in REAPER](sequencer-sleeve.png)
 
 ## Contents
 
