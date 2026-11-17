@@ -38,7 +38,6 @@ By NH4X. Panel 2.5 · Sequencer 1.1.4. Music: https://nh4x.bandcamp.com/
 <td valign="top">
 
 - [Good to know](#good-to-know)
-  - [Known limits](#known-limits)
 - [Other DAWs](#other-daws)
 - [Split channel mode](#volca-setup-split-channel-mode)
 - [Changes](#changes)
@@ -243,12 +242,9 @@ Locks and morph snapshots are saved with the project, not in presets. Sound file
 ## Good to know
 - The volca has no MIDI out, so the panel only knows what it sent. If the volca was switched on late, press **SEND ALL**.
 - For MIDI controllers: every control is a plugin parameter. Panel: Roll (slider 146) and Undo (147) act as buttons (send 1), Morph = slider 148.
+- Use one sequencer + panel pair per REAPER session: they talk through shared memory that all open project tabs share.
+- The panel uses CC 119 on MIDI channel 16 to talk to the sequencer and doesn't pass it on.
 - Made and tested on Windows. macOS should work, but fonts will look different (not tested).
-
-### Known limits
-- **One sequencer + panel pair per REAPER session works best.** They talk through shared memory that is global in REAPER: a panel in another open project tab also counts as "found".
-- The panel uses **CC 119 on MIDI channel 16** to talk to the sequencer and doesn't pass it on.
-- With a REAPER **loop**, a kit change at the loop start arrives a little late on the first hit after the wrap.
 
 ## Other DAWs
 The **panel** should work in other DAWs through **ysfx** (free, loads JSFX as VST3 / AU / CLAP): https://github.com/JoepVanlier/ysfx/releases. Not tested by me. The **sequencer** and the actions need REAPER.
