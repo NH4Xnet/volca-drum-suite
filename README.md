@@ -4,7 +4,7 @@ A free **step sequencer** and **editor panel** for the **Korg volca drum** insid
 
 By NH4X. Panel 2.5 · Sequencer 1.1.4. Music: https://nh4x.bandcamp.com/
 
-![Volca Drum Sequencer and Panel in REAPER](sequencer-preview.png)
+![Volca Drum Panel: randomize a whole kit and watch every part change](VolcaDrumPanel.gif)
 
 ## Contents
 
@@ -163,6 +163,8 @@ The panel and the sequencer need a small background helper to talk to each other
 | Volca duck to selected tracks | Action list | Lets the sequencer duck other tracks (sidechain style). See **Duck trigger**. |
 
 ## The sequencer
+
+![Volca Drum Sequencer and Panel in REAPER](sequencer-preview.png)
 
 | Feature | What it does |
 |---|---|
