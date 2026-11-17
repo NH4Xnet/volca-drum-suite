@@ -1,5 +1,5 @@
 desc:Volca Drum Sequencer
-// VOLCA DRUM SEQUENCER 1.1.4 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
+// VOLCA DRUM SEQUENCER 1.1.5 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
@@ -35,8 +35,8 @@ slider7:0<0,1,1{Off,On}>-Fill
 slider8:1<1,16,1>-Pattern
 slider9:50<50,75,1>-Swing
 slider10:0<0,1,1{Off,On}>-Chain
-slider11:0<0,13,1{Classic red,Sleeve red,Hazard,Cold steel,Amber CRT,Field olive,Concrete,Xerox,Plant light,Blueprint,Night vision,Oxblood,Rust,Plant grey}>-Color
-slider12:0<0,1,1{Classic,Sleeve}>-Look
+slider11:1<0,13,1{Classic red,Sleeve red,Hazard,Cold steel,Amber CRT,Field olive,Concrete,Xerox,Plant light,Blueprint,Night vision,Oxblood,Rust,Plant grey}>-Color
+slider12:1<0,1,1{Classic,Sleeve}>-Look
 slider13:0<0,63,1>-Mute bits
 slider14:0<0,63,1>-Solo bits
 slider15:0<0,100,1>-Chaos
@@ -426,6 +426,9 @@ function lks(p, k) ( lnk(p) && k < 14 ? k % 7 : k; );
 // v1.1.2 (2026-11-15): no "~" on ATT / REL times (calibration run 3: EG types have the same length)
 // v1.1.3 (2026-11-15): mouse gaps filled: right-click lists on HUM, EUCLID HITS, GEN AMOUNT, INTENSITY, ACCENT AMT, BPM, length strip, P-LOCK PARAM;
 //   Alt = default on GEN AMOUNT / WHAT, EVOLVE CHANGES, BPM, length strip; double-click INTENSITY = 50; CAL right-click = menu (no silent reset), Alt+click CAL = 0 ms.
+// v1.1.5 (2026-11-17): Sleeve fonts like the Drum Sequencer v0.10: text = Bahnschrift SemiBold SemiCondensed (sfont, TFK 1.1), Big Shoulders only for
+//   title, header buttons + values, pattern number, big part numbers, velocity / STEP values, mode tabs, TRIGLESS (sfontb); letter spacing only on header
+//   buttons, mode tabs, TRIGLESS (SPC); STEP-tab hint lines dropped in Sleeve (the tooltips say the same).
 // v1.1.4 (2026-11-15): Alt+click on a step sets the lane length only in STEPS (value tabs: Alt paints the default again, as meant); GEN amount messages say DENSITY / AMOUNT like the box label.
 // v1.0.1: L1/L2 PITCH locks + accent amounts are skipped on PIT lanes (QPI on: the note sets the pitch, a pitch CC leaves it off)
 function pqblk(p, k) ( (k == 4 || k == 11) && PON[p]; );
@@ -1288,12 +1291,15 @@ function fontok(nm) local(w1, w2, hh) (
   gfx_setfont(9, "zqxNoSuchFont77", 40); gfx_measurestr("MWmw0123ABC", w2, hh);
   abs(w1 - w2) > 0.5;
 );
-time_precise() - fontt > 10 || !fontt ? (
+time_precise() - fontt > 10 || !fontt || strlen(#tf) == 0 ? (   // empty text font name = GDI falls back to Arial
   fontt = time_precise();
   // ExtraBold cut = thicker strokes (reads bigger); static weights show up as their own family names
   sfb = 'b';
   0 && fontok("Big Shoulders Display ExtraBold") ? (strcpy(#sf, "Big Shoulders Display ExtraBold"); sfb = 0;)   // ExtraBold OFF: stepped edges (2026-11-05)
   : fontok("Big Shoulders Display") ? strcpy(#sf, "Big Shoulders Display") : fontok("Bahnschrift Condensed") ? strcpy(#sf, "Bahnschrift Condensed") : strcpy(#sf, "Bahnschrift");
+  // v1.1.5 text font of the Sleeve look: Bahnschrift SemiBold SemiCondensed (comes with Windows 10/11)
+  tfb = 0; fontok("Bahnschrift SemiBold SemiCondensed") ? strcpy(#tf, "Bahnschrift SemiBold SemiCondensed")
+  : fontok("Bahnschrift SemiCondensed") ? (strcpy(#tf, "Bahnschrift SemiCondensed"); tfb = 'b';) : (strcpy(#tf, "Bahnschrift"); tfb = 'b';);
 );
 theme = max(0, min(NTH - 1, slider11 | 0));
 skin = slider12 >= 0.5;   // LOOK: 0 Classic, 1 Sleeve · COLOR (theme): any of the 13 works with both looks
@@ -1337,7 +1343,11 @@ function glowtxt(s, x, y, a) (   // gte = fade-in factor of the readout (v0.54.2
 function inr(x, y, w, h) ( mouse_x >= x && mouse_x < x + w && mouse_y >= y && mouse_y < y + h );
 // ---- Sleeve look helpers ----
 SFK = 1.25;   // condensed font reads small: Sleeve text +25 %
-function sfont(id, sz) ( gfx_setfont(id, #sf, floor(sz * SFK + 0.5), sfb); slsp_ = (sz < S(24) ? max(1, floor(max(1, floor(sz * SFK * 0.13 + 0.5)) * (spk_ > 0 ? spk_ : 1))) : 0); slcur_ = slsp_; );
+// v1.1.5 two Sleeve fonts: sfontb = Big Shoulders (big numbers, title, header buttons, mode tabs), letter spacing only where SPC = 1
+// (header buttons, mode tabs, TRIGLESS); sfont = text font Bahnschrift SemiCondensed, TFK by eye, no spacing
+TFK = 1.1;
+function sfontb(id, sz) ( gfx_setfont(id, #sf, floor(sz * SFK + 0.5), sfb); slsp_ = (SPC ? max(1, floor(min(sz, S(23)) * SFK * 0.13 + 0.5)) : 0); slcur_ = slsp_; );
+function sfont(id, sz) ( gfx_setfont(id, #tf, floor(sz * TFK + 0.5), tfb); slsp_ = 0; slcur_ = 0; );
 function frame2(x, y, w, h, t) ( gfx_rect(x, y, w, t); gfx_rect(x, y + h - t, w, t); gfx_rect(x, y, t, h); gfx_rect(x + w - t, y, t, h); );
 // hand-drawn marker cross (Sleeve: muted lane number): two wobbly strokes, each traced twice with a small offset
 function hstroke(ax, ay, bx, by, sd) local(i, t, px, py, qx, qy, nx, ny, ln, o, w) (
@@ -1371,9 +1381,9 @@ function shbtn(x, y, w, h, s, hi, en) local(fs) (
   hi ? (rc(K_ACC, 1); gfx_rect(x, y, w, h););
   rc(K_PLY, 1); gfx_rect(x, y, S(4), h);
   rc(K_LINE, 1); gfx_rect(x + S(4), y + h - S(2), w - S(4), S(2));
-  fs = (hi ? S(27) : S(25)); sfont(4, fs);
+  fs = (hi ? S(27) : S(25)); SPC = 1; sfontb(4, fs); SPC = 0;
   hi ? rc(K_BG2, 1) : en ? rc(K_PLY, 1) : rc(K_DIM, 1);
-  ctxt(fit(s, w - S(12)), x + S(4), y + (h - fs * SFK) / 2, w - S(4));
+  ctxt(fit(s, w - S(28)), x + S(4), y + (h - fs * SFK) / 2, w - S(4));   // air left + right (MASTER 1 BAR)
 );
 // plain value (no box), right-aligned; hot = focus color + underline
 function sval(x, y, w, h, s, hot, tr) (
@@ -1384,10 +1394,10 @@ function sval(x, y, w, h, s, hot, tr) (
 function btn(x, y, w, h, s, hi, en) (
   skin ? (
     hi ? (rc(K_FOC, 1); gfx_rect(x, y, w, h);) : (en ? rc(K_PLY, 1) : rc(K_LINE, 1); frame2(x, y, w, h, S(2)););
-    sfont(4, BTNFS > 0 ? BTNFS : S(19)); hi ? rc(K_FOCT, 1) : en ? rc(K_PLY, 1) : rc(K_DIM, 1);
+    BTNFS >= S(20) ? sfontb(4, BTNFS) : sfont(4, BTNFS > 0 ? BTNFS : S(15)); hi ? rc(K_FOCT, 1) : en ? rc(K_PLY, 1) : rc(K_DIM, 1);
     // v0.58.7: BTNBOLD = label drawn twice 1 px apart (only view tabs, P-LOCK group, song row, bottom tabs) · BTNDY = vertical nudge
-    ctxt(fit(s, w - S(8) - BTNBOLD), x, y + (h - (BTNFS > 0 ? BTNFS : S(19)) * SFK) / 2 + BTNDY, w);
-    BTNBOLD ? ctxt(#fit, x + 1, y + (h - (BTNFS > 0 ? BTNFS : S(19)) * SFK) / 2 + BTNDY, w);
+    ctxt(fit(s, w - S(8) - BTNBOLD), x, y + (h - (BTNFS > 0 ? BTNFS : S(15)) * SFK) / 2 + BTNDY, w);
+    BTNBOLD ? ctxt(#fit, x + 1, y + (h - (BTNFS > 0 ? BTNFS : S(15)) * SFK) / 2 + BTNDY, w);
   ) : (
     hi ? (rc(K_FOC, 1); gfx_rect(x, y, w, h);) : (
       rc(K_BTN, 1); gfx_rect(x, y, w, h);
@@ -3402,7 +3412,7 @@ gfx_gradrect(0, 0, gfx_w, gfx_h, bg_r, bg_g, bg_b, 1, 0, 0, 0, 0, (gfx_r - bg_r)
 // ---- title + theme ----
 gfx_setfont(1, "Bahnschrift", CF(S(26)), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(6));
 gfx_setfont(3, "Bahnschrift", CF(S(13)), 'b'); rc(K_ACC, 1); txt("S E Q U E N C E R", MG + S(1), MG + S(36));
-gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.1.4 · classic", MG + S(1), MG + S(54));   // bump on every change
+gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.1.5 · classic", MG + S(1), MG + S(54));   // bump on every change
 
 // ---- readout ----
 rc(K_RDB, 1); gfx_rect(RDX, MG, RDW, HDH);
@@ -3858,8 +3868,8 @@ skin ? (
   rc(K_PLY, 1); gfx_rect(0, HDY, TTW, HDH);
   rc(K_BG2, 1);
   gfx_setfont(1, #sf, S(36), 'b'); txt("VOLCA", S(16), HDY + S(4)); txt("DRUM", S(16), HDY + S(34));
-  sfont(3, S(14)); slcur_ = 0; txt("S E Q U E N C E R", S(17), HDY + S(68));
-  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.1.4 · sleeve", S(17), HDY + S(86));   // bump on every change
+  sfontb(3, S(14)); slcur_ = 0; txt("S E Q U E N C E R", S(17), HDY + S(68));
+  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.1.5 · sleeve", S(17), HDY + S(86));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch in the title block, like Classic; hover = name in the status
   rc(K_BG2, lkhit ? 1 : 0.75); frame2(LKX, THY, LKW, THH, S(2)); gfx_rect(LKX + S(4), THY + S(4), (LKW - S(8)) / 2, THH - S(8));
   rc(K_BG2, 1); gfx_rect(THX, THY, THW, THH); rc(K_ACC, 1); gfx_rect(THX + S(3), THY + S(3), THW - S(6), THH - S(6));
@@ -3894,26 +3904,26 @@ skin ? (
   slider24 > 0 ? gfx_rect(DNX + S(4), SWY + SWH / 2 - dn_, DNW - S(4), dn_) : slider24 < 0 ? gfx_rect(DNX + S(4), SWY + SWH / 2, DNW - S(4), dn_);
   rc(K_LINE, 1); gfx_rect(DNX + S(4), SWY + floor(SWH / 2), DNW - S(4), 1);
   rc(K_PLY, 1); gfx_rect(DNX, SWY, S(4), SWH);
-  sfont(4, S(32)); gfx_measurestr("0", sv_w, sv_h); SWVY = floor(SWY + SWH / 2 + (SWH / 2 - sv_h) / 2) - S(1);   // v0.58.3: value centered in the lower half (below the DENSITY zero line)
+  sfontb(4, S(32)); gfx_measurestr("0", sv_w, sv_h); SWVY = floor(SWY + SWH / 2 + (SWH / 2 - sv_h) / 2) - S(1);   // v0.58.3: value centered in the lower half (below the DENSITY zero line)
   sfont(3, S(15)); rc(K_LBL, 1); ctxt("DENSITY", DNX + S(4), SWY + S(4), DNW - S(4));
-  sfont(4, S(32)); drag == 31 || hreg == 31 ? rc(K_FOC, 1) : slider24 == 0 ? rc(K_DIM, 1) : rc(K_TXT, 1);
+  sfontb(4, S(32)); drag == 31 || hreg == 31 ? rc(K_FOC, 1) : slider24 == 0 ? rc(K_DIM, 1) : rc(K_TXT, 1);
   slider24 == 0 ? strcpy(#t, "0") : sprintf(#t, slider24 > 0 ? "+%d" : "%d", slider24); ctxt(#t, DNX + S(4), SWVY, DNW - S(4));
   // chaos: accent fill rises with the amount
   slider15 > 0 ? (rc(K_ACC, 0.15 + 0.45 * slider15 / 100); ch_ = SWH * slider15 / 100; gfx_rect(CHX + S(4), SWY + SWH - ch_, CHW - S(4), ch_););
   rc(K_PLY, 1); gfx_rect(CHX, SWY, S(4), SWH);
   sfont(3, S(15)); rc(K_LBL, 1); ctxt("CHAOS", CHX + S(4), SWY + S(4), CHW - S(4));
-  sfont(4, S(32)); drag == 25 || hreg == 25 ? rc(K_FOC, 1) : slider15 == 0 ? rc(K_DIM, 1) : rc(K_TXT, 1);
+  sfontb(4, S(32)); drag == 25 || hreg == 25 ? rc(K_FOC, 1) : slider15 == 0 ? rc(K_DIM, 1) : rc(K_TXT, 1);
   slider15 == 0 ? strcpy(#t, "OFF") : sprintf(#t, "%d%%", slider15); ctxt(#t, CHX + S(4), SWVY, CHW - S(4));
   // swing
   rc(K_PLY, 1); gfx_rect(SWX, SWY, S(4), SWH);
   sfont(3, S(15)); rc(K_LBL, 1); ctxt("SWING", SWX + S(4), SWY + S(4), SWW - S(4));
-  sfont(4, S(32)); drag == 8 || hreg == 8 ? rc(K_FOC, 1) : gsw() == 50 ? rc(K_DIM, 1) : rc(K_TXT, 1);
+  sfontb(4, S(32)); drag == 8 || hreg == 8 ? rc(K_FOC, 1) : gsw() == 50 ? rc(K_DIM, 1) : rc(K_TXT, 1);
   gsw() == 50 ? strcpy(#t, "OFF") : sprintf(#t, "%d%%", gsw()); ctxt(#t, SWX + S(4), SWVY, SWW - S(4));
   rc(K_PLY, 1); gfx_rect(0, HDY + HDH, gfx_w, S(6));
 
   // ---- pattern row ----
   sfont(3, S(16)); rc(K_LBL, 1); txt("PATTERN", MG, PTY + (PTH - S(16) * SFK) / 2);
-  sfont(4, S(26)); rc(K_TXT, 1); sprintf(#t, "%02d", curpat + 1); rtxt(#t, MG + TW, PTY + (PTH - S(26) * SFK) / 2);
+  sfontb(4, S(26)); rc(K_TXT, 1); sprintf(#t, "%02d", curpat + 1); rtxt(#t, MG + TW, PTY + (PTH - S(26) * SFK) / 2);
   k = 0;
   loop(NPAT,
     x = cellx(k); pu = patused(k);
@@ -4019,7 +4029,7 @@ skin ? (
     y0 = laney(p); act = p == focus; ly1_ = lrow1(p); ly2_ = lrow2(p);
     rc(K_LINE, 1); gfx_rect(MG, y0 - S(8), gfx_w - 2 * MG, S(2));
     // big part number: outlined, focused lane = filled block
-    sfont(1, S(50)); sprintf(#t, "%02d", p + 1);
+    sfontb(1, S(50)); sprintf(#t, "%02d", p + 1);
     gfx_measurestr(#t, nw_, nh_); nx_ = LSX + (NUMW - nw_) / 2; ny_ = y0 + (LH - nh_) / 2;
     act ? (rc(K_FOC, 1); gfx_rect(LSX, y0, NUMW, LH); rc(K_FOCT, 1); txt(#t, nx_, ny_);)
         : otxt(#t, nx_, ny_, max(1, S(1)));
@@ -4120,7 +4130,7 @@ skin ? (
           // TRIGLESS: focus frame + LOCK + number of locked params
           rc(K_FOC, 1); frame2(x, y, CW, CH, S(2));
           sfont(3, S(14)); ctxt("LOCK", x, y + CH / 2 - S(14), CW);
-          sfont(4, S(18)); haslk(idx) ? (sprintf(#t, "%d", haslk(idx)); ctxt(#t, x, y + CH / 2, CW);) : (rc(K_ACC, 1); ctxt("0", x, y + CH / 2, CW););
+          sfontb(4, S(18)); haslk(idx) ? (sprintf(#t, "%d", haslk(idx)); ctxt(#t, x, y + CH / 2, CW);) : (rc(K_ACC, 1); ctxt("0", x, y + CH / 2, CW););
           sfont(5, S(14)); rc(K_TXT, 0.9);
           CHN[idx] < 100 ? (sprintf(#t, "%d%%", CHN[idx]); txt(#t, x + S(4), y + S(4)););
           CND[idx] > 0 ? rtxt(CNM[CND[idx]], x + CW - S(4), y + S(4));
@@ -4129,7 +4139,7 @@ skin ? (
           rc(K_ACC, ta_); gfx_rect(x, y, CW, CH);
           bh = VEL[idx] / 127 * CH; rc(K_ACC, 1); gfx_rect(x, y + CH - bh, CW, bh);
           // top number: velocity, or the step pitch on a PIT lane (velocity still shows as the bar)
-          sfont(4, S(21)); rc(K_TXT, 1); PON[p] && PIT[idx] != 0 ? sprintf(#t, "%+d", PIT[idx]) : sprintf(#t, "%d", VEL[idx]); ctxt(#t, x, y + S(2), CW);
+          sfontb(4, S(21)); rc(K_TXT, 1); PON[p] && PIT[idx] != 0 ? sprintf(#t, "%+d", PIT[idx]) : sprintf(#t, "%d", VEL[idx]); ctxt(#t, x, y + S(2), CW);
           sfont(5, S(14));
           CHN[idx] < 100 ? (rc(K_TXT, 0.9); sprintf(#t, "%d%%", CHN[idx]); txt(#t, x + S(3), y + S(26)););
           CND[idx] > 0 || (CHN[idx] < 100 && CTG[idx] > 0) ? (
@@ -4165,7 +4175,7 @@ skin ? (
   ACH > 0 ? (
     rc(K_LINE, 1); gfx_rect(MG, ACY - S(8), gfx_w - 2 * MG, S(2));
     rc(K_FOC, 1); gfx_rect(LSX, ACY, S(4), ACH);
-    sfont(4, S(20)); rc(K_FOC, 1); txt("ACCENT", LSX + S(10), AY1 + (R1H - S(20) * SFK) / 2);
+    sfont(4, S(17)); rc(K_FOC, 1); txt("ACCENT", LSX + S(10), AY1 + (R1H - S(17) * SFK) / 2);
     sfont(3, S(15)); rc(K_LBL, 1);
     txt("LEN", KX + S(38), AY1 + (R1H - S(17)) / 2); txt("RATE", KX + S(92), AY1 + (R1H - S(17)) / 2);
     txt("PARTS", LSX + S(10), AY2 + (R2H - S(17)) / 2);
@@ -4229,7 +4239,7 @@ skin ? (
   // ---- bottom (layout B): thick rule · full-width mode tabs · 9 big value columns ----
   rc(K_PLY, 1); gfx_rect(0, EY - S(6), gfx_w, S(6));
   BTNFS = S(21); i = 0;   // mode tabs: bigger than the buttons below (19)
-  BTNDY = -max(1, S(1)); BTNBOLD = 1; loop(NMB, btn(MBX + i * (MBW + MBG), MBY, MBW, MBH, mbname(mbat(i)), mbat(i) == smode, 1); i += 1;); BTNDY = 0; BTNBOLD = 0;   // v0.58.7: 1 px up
+  BTNDY = -max(1, S(1)); BTNBOLD = 1; SPC = 1; loop(NMB, btn(MBX + i * (MBW + MBG), MBY, MBW, MBH, mbname(mbat(i)), mbat(i) == smode, 1); i += 1;); BTNDY = 0; BTNBOLD = 0; SPC = 0;   // v0.58.7: 1 px up
   BTNFS = 0;
   rc(K_LINE, 1); gfx_rect(MG, BCY - S(2), BCW, S(2));
   sfont(5, S(16)); rc(K_LBL, 1);
@@ -4240,11 +4250,11 @@ skin ? (
     c_ = 0; loop(8, rc(K_LINE, 1); gfx_rect(BCX + (c_ + 1) * COLW - S(2), BCY, S(2), EDH - BTH); c_ += 1;);
     x = fldx(0);
     sfont(3, S(15)); rc(K_LBL, 1); txt("SELECTED", x, BCY + S(4));
-    sfont(4, S(24)); rc(K_FOC, 1);
+    sfontb(4, S(24)); rc(K_FOC, 1);
     nsel > 1 ? sprintf(#t, "%d STEPS", nsel) : sprintf(#t, "P%d · STEP %02d", selp + 1, sels + 1);
     txt(fit(#t, FW), x, BCY + S(24));
     // v0.58.5: TRIGLESS toggle button (lit = trigless) replaces the ON / OFF / TRIGLESS status line
-    btn(x, TGY, FW, TGH, "", ON[six] == 2, 1); sfont(4, S(16)); ON[six] == 2 ? rc(K_FOCT, 1) : rc(K_PLY, 1);
+    btn(x, TGY, FW, TGH, "", ON[six] == 2, 1); SPC = 1; sfontb(4, S(16)); SPC = 0; ON[six] == 2 ? rc(K_FOCT, 1) : rc(K_PLY, 1);
     ctxt("TRIGLESS", x, TGY + (TGH - S(16) * SFK) / 2, FW);
     hreg == 81 ? (rc(K_TXT, 0.7); frame(x - 1, TGY - 1, FW + 2, TGH + 2););
     f = 1;
@@ -4257,7 +4267,7 @@ skin ? (
       f == 8 ? strcpy(#t, tgname(CTG[six])) :
       f == 7 ? (PON[selp] ? sprintf(#t, "%+d %s", PIT[six], nname(max(0, min(127, PBNOTE[selp] + PIT[six])))) : sprintf(#t, "%+d", PIT[six])) :
       f == 6 ? (RMP[six] == 0 ? strcpy(#t, "-") : sprintf(#t, "%+d%%", RMP[six])) : sprintf(#t, "%d%%", CHN[six]);
-      sfont(4, S(30)); slsp_ = S(2); hot_ ? rc(K_ACC, 1) : (f == 7 && !PON[selp]) || (f == 8 && CTG[six] == 0) ? rc(K_DIM, 1) : rc(K_TXT, 1);
+      sfontb(4, S(30)); hot_ ? rc(K_ACC, 1) : (f == 7 && !PON[selp]) || (f == 8 && CTG[six] == 0) ? rc(K_DIM, 1) : rc(K_TXT, 1);
       txt(fit(#t, FW), x, BCY + S(16));
       // bar under the value (velocity, chance, ramp) · offset / pitch = tick
       rc(K_LINE, 1); gfx_rect(x, BCY + S(56), FW, S(4));
@@ -4265,9 +4275,7 @@ skin ? (
       rc(K_ACC, 1); bw_ > 0 ? gfx_rect(x, BCY + S(56), FW * bw_, S(4));
       f == 4 ? gfx_rect(x + FW / 2 + OFS[six] / 100 * FW - S(1), BCY + S(54), S(3), S(8));
       f == 7 ? gfx_rect(x + FW / 2 + PIT[six] / 48 * FW - S(1), BCY + S(54), S(3), S(8));
-      sfont(5, S(15)); rc(K_DIM, 1);
-      txt(fit(f == 1 ? "63 = panel level" : f == 2 ? "o = hit  _ = rest" : f == 3 ? "A:B · 1st · fill · pre · nei" : f == 4 ? "early - / late +" : f == 6 ? "+ louder / - softer" : f == 7 ? (PON[selp] ? "semitones" : "lane PIT is off") : f == 8 ? "what the IF hits" : "dice roll per step", FW),
-          x, BCY + S(64));
+      // v1.1.5: no hint line under the values in Sleeve (the hover tooltips say the same)
       f += 1;
     );
   );

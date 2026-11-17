@@ -2,7 +2,7 @@
 
 A free **step sequencer** and **editor panel** for the **Korg volca drum** inside REAPER, plus a few helper actions. Two JSFX plugins, no extra software.
 
-By NH4X. Panel 2.5 · Sequencer 1.1.4. Music: https://nh4x.bandcamp.com/
+By NH4X. Panel 2.6.1 · Sequencer 1.1.5. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Panel: randomize a whole kit and watch every part change](VolcaDrumPanel.gif)
 
@@ -203,7 +203,7 @@ Rest the mouse for a second on a control and the readout says what it does. **Ct
 | Starting grooves | **BEAT** tab: a whole groove from 28 styles · **GEN** tab: Euclid and randomize for one lane |
 | Feel | **FEEL** tab: groove template per lane, **EVOLVE**, **AUTO FILL** · header: **SWING**, **CHAOS**, **DENSITY** |
 | Clear / reset | **TOOLS** tab: top row keeps, bottom row removes. **CLEAR** keeps the settings, **RESET** = back to default. **NEW SESSION** empties all 16 patterns (asks first, no undo) |
-| Tap record | **REC** button (Classic look), then play the parts on MIDI channel 1-6. **CAL**: tap 8 beats and it learns your timing |
+| Tap record | **REC** button, then play the parts on MIDI channel 1-6. **CAL**: tap 8 beats and it learns your timing |
 | Default value | Double-click a value box |
 
 **Choke** (closed hat cuts open hat) is done in the volca itself: **FUNC + CHOKE** (step 8), then steps 1-6 switch it per part. The lowest part number wins.
@@ -213,9 +213,9 @@ The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI
 
 ## The panel
 
-![The panel, Classic look](screenshot.png)
-
 ![The panel, Sleeve look](screenshot-sleeve.png)
+
+![The panel, Classic look](screenshot.png)
 
 | Action | How |
 |---|---|
@@ -233,7 +233,7 @@ The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI
 | Morph | **SET A**, change or load a kit, **SET B**, then move the MORPH bar |
 | Test hit / pitch quantize | Play button / **Q** in the part header |
 | Link layers | **LINK**: a change on one layer goes to the other layer too (also for sequencer p-locks) |
-| Look / color | Small square (look) and color swatch (click or wheel) at the top left. Same in the sequencer |
+| Look / color | Small square (look: Sleeve or Classic, new instances start in Sleeve) and color swatch (click or wheel) at the top left. Same in the sequencer |
 
 Locks and morph snapshots are saved with the project, not in presets. Sound files live in REAPER's resource folder under `Data/NH4X Volca/VolcaSounds` and are shared by all projects.
 
@@ -241,9 +241,10 @@ Locks and morph snapshots are saved with the project, not in presets. Sound file
 
 ## Good to know
 - The volca has no MIDI out, so the panel only knows what it sent. If the volca was switched on late, press **SEND ALL**.
-- For MIDI controllers: every control is a plugin parameter. Panel: Roll (slider 146) and Undo (147) act as buttons (send 1), Morph = slider 148.
+- For MIDI controllers: every control is a plugin parameter. Panel: Roll (slider 146) and Undo (147) act as buttons (send 1), Morph = slider 148. Sliders 160-195 = each Select row (SRC / MOD.T / EG.T) per part and layer as its own parameter.
 - Use one sequencer + panel pair per REAPER session: they talk through shared memory that all open project tabs share.
 - The panel uses CC 119 on MIDI channel 16 to talk to the sequencer and doesn't pass it on.
+- Fonts of the Sleeve look: big numbers and titles use the free font **Big Shoulders Display** (Google Fonts) if it's installed, otherwise Bahnschrift Condensed. All other text uses Bahnschrift, which comes with Windows 10 / 11.
 - Made and tested on Windows. macOS should work, but fonts will look different (not tested).
 
 ## Other DAWs
@@ -262,6 +263,7 @@ The panel and the sequencer send every part on its own MIDI channel: part 1 on c
 Source: Korg volca drum Owner's Manual, section *Setting the MIDI channel*: https://www.korg.com/us/support/download/product/0/809/
 
 ## Changes
+- **Suite 1.3** (panel 2.6.1, sequencer 1.1.5): Sleeve look with two fonts: Big Shoulders Display for big numbers and titles, Bahnschrift SemiCondensed for all other text (easier to read). New instances start in Sleeve with the Sleeve red colors. Panel: each Select row (SRC / MOD.T / EG.T) is also its own parameter (sliders 160-195) for MIDI controllers and automation.
 - **Suite 1.2** (panel 2.5, sequencer 1.1.4): panel: SMART roll (pick a kind: KICK, SNARE, CLAP, HAT, METAL, PERC, BASS, MICRO, MIX; rolls stay inside useful ranges, MIX on KIT = a drum kit; WILD = the old full-range roll), SOUND menu grouped by first word, Alt+click = default. Sequencer: right-click value lists (humanize, Euclid hits, GEN amount, intensity, accent, BPM, length strip, p-lock parameter), more Alt+click defaults, CAL right-click is a menu. Fix: Alt+click on a step sets the lane length only in STEPS.
 - **Suite 1.1** (panel 2.1.3, sequencer 1.1.1): values in real units, measured on a volca drum: LEVEL in dB, ATTACK / RELEASE in ms, PITCH in Hz + nearest note and cents (sine / saw; Q on shows QPI), rise-fall MOD / RATE as sweep in semitones / ms. Same units on the sequencer's p-lock cells. Sleeve: Q and LINK stay visible when on in the selected part.
 - **Suite 1.0.1** (sequencer 1.0.1): Fix: pitch locks only on lanes with PIT on (blocked and not sent on PIT-off lanes, PITCH tab not paintable there).
