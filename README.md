@@ -2,13 +2,15 @@
 
 A free **step sequencer** and **editor panel** for the **Korg volca drum** inside REAPER, plus a few helper actions. Two JSFX plugins, no extra software.
 
-By NH4X. Panel 2.6.1 · Sequencer 1.1.5. Music: https://nh4x.bandcamp.com/
+By NH4X. Panel 2.6.2 · Sequencer 1.1.6. Music: https://nh4x.bandcamp.com/
 
-![Volca Drum Panel: randomize a whole kit and watch every part change](VolcaDrumPanel.gif)
+**User manuals:** [Overview](docs/README.md) · [Sequencer](docs/sequencer.md) · [Panel](docs/panel.md) · [Actions](docs/actions.md)
+
+![NH4X Volca Drum Panel: randomize a whole kit and watch every part change](VolcaDrumPanel.gif)
 
 <p align="center">
-  <a href="sequencer-sleeve.png"><img src="sequencer-sleeve.png" height="260" alt="Volca Drum Sequencer, Sleeve look"></a>
-  <a href="screenshot-sleeve.png"><img src="screenshot-sleeve.png" height="260" alt="Volca Drum Panel, Sleeve look"></a>
+  <a href="sequencer-sleeve.png"><img src="sequencer-sleeve.png" height="260" alt="NH4X Volca Drum Sequencer, Sleeve look"></a>
+  <a href="screenshot-sleeve.png"><img src="screenshot-sleeve.png" height="260" alt="NH4X Volca Drum Panel, Sleeve look"></a>
   <br><sub>Sequencer · Panel (Sleeve look, click for full size)</sub>
 </p>
 
@@ -101,7 +103,7 @@ Or add **NH4X REAPER Tools** instead: it lists this suite plus the other NH4X to
 ### Step 3 · Install the two plugins
 1. **Extensions > ReaPack > Browse packages**.
 2. Type **volca** into the filter.
-3. Right-click **Volca Drum Sequencer** > **Install**, then right-click **Volca Drum Panel** > **Install**.
+3. Right-click **NH4X Volca Drum Sequencer** > **Install**, then right-click **NH4X Volca Drum Panel** > **Install**.
 4. Confirm with **Apply** (or **OK**).
 
 This also installs the helper actions (they all start with "Volca" in the action list).
@@ -137,12 +139,12 @@ The panel and the sequencer need a small background helper to talk to each other
 </p>
 
 5. Click the track's **FX** button and type **volca** into the filter.
-6. Add **first the Volca Drum Sequencer**, **then the Volca Drum Panel**. The order matters.
+6. Add **first the NH4X Volca Drum Sequencer**, **then the NH4X Volca Drum Panel**. The order matters.
 7. **Arm the track** (its record button). Then the sequencer also runs smoothly while REAPER is stopped (FREE mode) and hears your MIDI keyboard for tap record.
 
 <p align="center">
   <a href="install/5-add-fx.png"><img src="install/5-add-fx.png" height="230" alt="Add FX filtered to volca: sequencer first"></a>
-  <a href="install/6-done.png"><img src="install/6-done.png" height="230" alt="Done: Volca Drum Sequencer and Panel on the track"></a>
+  <a href="install/6-done.png"><img src="install/6-done.png" height="230" alt="Done: NH4X Volca Drum Sequencer and Panel on the track"></a>
   <br><sub>Sequencer first, then panel · Done</sub>
 </p>
 
@@ -162,8 +164,8 @@ The panel and the sequencer need a small background helper to talk to each other
 
 | What | Where | What it does |
 |---|---|---|
-| **Volca Drum Sequencer** | FX browser: JS | 6 lanes × 64 steps for the 6 volca parts. See below. |
-| **Volca Drum Panel** | FX browser: JS | Every parameter of all 6 parts + waveguide on one screen, kits, sounds, randomize, morph. See below. |
+| **NH4X Volca Drum Sequencer** | FX browser: JS | 6 lanes × 64 steps for the 6 volca parts. See below. |
+| **NH4X Volca Drum Panel** | FX browser: JS | Every parameter of all 6 parts + waveguide on one screen, kits, sounds, randomize, morph. See below. |
 | Volca listener (start) | Action list | Background helper: sound save / rename / delete, regions = patterns. Step 4. |
 | Volca kit (save) / (kit +) / (kit -) / (send all) | Action list | Save the panel as a new kit, next / previous kit, send the whole kit. For keys or a MIDI controller. |
 | Volca sound (save) / (load) | Action list | Save / load the focused part as a sound file. For keys or a MIDI controller (the panel's SOUND menu does the same). |
@@ -215,7 +217,7 @@ Rest the mouse for a second on a control and the readout says what it does. **Ct
 **Choke** (closed hat cuts open hat) is done in the volca itself: **FUNC + CHOKE** (step 8), then steps 1-6 switch it per part. The lowest part number wins.
 
 ### Duck trigger
-The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI channel 10). Select the tracks that should duck (bass, pads …) and run **Volca duck to selected tracks**: it adds a MIDI receive from the sequencer track (channel 10 > bus 2). Run it again on a track = receive removed. On the ducking track you need a plugin that ducks on MIDI notes, e.g. ShaperBox 3 (VST3): set its MIDI input to Bus 2 and turn on *Map REAPER MIDI buses to VST3 MIDI buses* in its pin menu.
+The DUCK buttons (**ROUTE** tab) pick lanes that also send a trigger (C1 on MIDI channel 10). Select the tracks that should duck (bass, pads …) and run **Volca duck to selected tracks**: it adds a MIDI receive from the sequencer track (channel 10 > bus 2). Run it again on a track = receive removed. On the ducking track you need a plugin that ducks on MIDI notes, e.g. ShaperBox 3 (VST3): set its MIDI input to Bus 2 and turn on *Map REAPER MIDI buses to VST3 MIDI buses* in its pin menu. Full guide with tricks (ghost ducking, duck only in the chorus): [Volca duck to selected tracks](docs/actions.md#volca-duck-to-selected-tracks).
 
 ## The panel
 
@@ -267,6 +269,7 @@ The panel and the sequencer send every part on its own MIDI channel: part 1 on c
 Source: Korg volca drum Owner's Manual, section *Setting the MIDI channel*: https://www.korg.com/us/support/download/product/0/809/
 
 ## Changes
+- **Suite 1.4** (panel 2.6.2, sequencer 1.1.6): new names in the FX browser: **NH4X Volca Drum Panel** and **NH4X Volca Drum Sequencer** (same files, existing projects keep working). User manuals with screenshots in `docs/`.
 - **Suite 1.3** (panel 2.6.1, sequencer 1.1.5): Sleeve look with two fonts: Big Shoulders Display for big numbers and titles, Bahnschrift SemiCondensed for all other text (easier to read). New instances start in Sleeve with the Sleeve red colors. Panel: each Select row (SRC / MOD.T / EG.T) is also its own parameter (sliders 160-195) for MIDI controllers and automation.
 - **Suite 1.2** (panel 2.5, sequencer 1.1.4): panel: SMART roll (pick a kind: KICK, SNARE, CLAP, HAT, METAL, PERC, BASS, MICRO, MIX; rolls stay inside useful ranges, MIX on KIT = a drum kit; WILD = the old full-range roll), SOUND menu grouped by first word, Alt+click = default. Sequencer: right-click value lists (humanize, Euclid hits, GEN amount, intensity, accent, BPM, length strip, p-lock parameter), more Alt+click defaults, CAL right-click is a menu. Fix: Alt+click on a step sets the lane length only in STEPS.
 - **Suite 1.1** (panel 2.1.3, sequencer 1.1.1): values in real units, measured on a volca drum: LEVEL in dB, ATTACK / RELEASE in ms, PITCH in Hz + nearest note and cents (sine / saw; Q on shows QPI), rise-fall MOD / RATE as sweep in semitones / ms. Same units on the sequencer's p-lock cells. Sleeve: Q and LINK stay visible when on in the selected part.

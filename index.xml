@@ -64,7 +64,7 @@ SOUND menu: sounds that share their first word are grouped in submenus (also in 
 Alt+click = default on every bar, AMOUNT and MORPH (double-click still works).
 ATTACK / RELEASE times no longer show "~": all EG types have the same length.]]></changelog>
       </version>
-      <version name="2.6.1" author="NH4X" time="2026-11-17T18:33:07Z">
+      <version name="2.6.1" author="NH4X" time="2026-11-18T20:05:15Z">
         <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.3/Volca%20Drum/Volca%20Drum%20Panel.jsfx</source>
         <source file="Volca listener (start).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.3/Volca%20Drum/Volca%20listener%20%28start%29.lua</source>
         <source file="Volca sound (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.3/Volca%20Drum/Volca%20sound%20%28save%29.lua</source>
@@ -76,6 +76,18 @@ ATTACK / RELEASE times no longer show "~": all EG types have the same length.]]>
         <changelog><![CDATA[Sleeve look: two fonts. Big Shoulders Display (if installed) for big numbers, title and section heads; Bahnschrift SemiBold SemiCondensed (comes with Windows) for all other text, easier to read.
 New instances start in the Sleeve look with the Sleeve red colors (existing projects and presets keep their look).
 Select rows as parameters: sliders 160-195 = SRC / MOD.T / EG.T of each part and layer. They follow the panel; moving one changes only its own part of the Select CC (for MIDI controllers and automation).]]></changelog>
+      </version>
+      <version name="2.6.2" author="NH4X" time="2026-11-18T20:09:16Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20Drum%20Panel.jsfx</source>
+        <source file="Volca listener (start).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20listener%20%28start%29.lua</source>
+        <source file="Volca sound (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20sound%20%28save%29.lua</source>
+        <source file="Volca sound (load).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20sound%20%28load%29.lua</source>
+        <source file="Volca kit (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20kit%20%28save%29.lua</source>
+        <source file="Volca kit (kit +).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20kit%20%28kit%20%2B%29.lua</source>
+        <source file="Volca kit (kit -).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20kit%20%28kit%20-%29.lua</source>
+        <source file="Volca kit (send all).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20kit%20%28send%20all%29.lua</source>
+        <changelog><![CDATA[New name in the FX browser: NH4X Volca Drum Panel (same file, existing projects keep working).
+User manual with screenshots: docs/panel.md on GitHub.]]></changelog>
       </version>
     </reapack>
     <reapack name="Volca Drum Sequencer.jsfx" type="effect" desc="NH4X Volca Drum Sequencer (step sequencer for the Korg volca drum)">
@@ -106,12 +118,18 @@ Alt+click = default on GEN AMOUNT / WHAT, EVOLVE CHANGES, BPM and the length str
 Fix: Alt+click on a step sets the lane length only in STEPS; in the value tabs Alt paints the default again.
 ATTACK / RELEASE locks no longer show "~".]]></changelog>
       </version>
-      <version name="1.1.5" author="NH4X" time="2026-11-17T18:33:07Z">
+      <version name="1.1.5" author="NH4X" time="2026-11-18T20:05:15Z">
         <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.3/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
         <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.3/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
         <changelog><![CDATA[Sleeve look: two fonts. Big Shoulders Display (if installed) for big numbers, title, header buttons, mode tabs and TRIGLESS; Bahnschrift SemiBold SemiCondensed (comes with Windows) for all other text, easier to read. Letter spacing only on header buttons, mode tabs and TRIGLESS.
 Sleeve STEP tab: no hint lines under the values (the tooltips say the same).
 New instances start in the Sleeve look with the Sleeve red colors (existing projects and presets keep their look).]]></changelog>
+      </version>
+      <version name="1.1.6" author="NH4X" time="2026-11-18T20:09:16Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
+        <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.4/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
+        <changelog><![CDATA[New name in the FX browser: NH4X Volca Drum Sequencer (same file, existing projects keep working).
+User manual with screenshots: docs/sequencer.md on GitHub.]]></changelog>
       </version>
     </reapack>
   </category>

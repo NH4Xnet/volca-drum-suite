@@ -1,11 +1,11 @@
-desc:Volca Drum Panel
-// VOLCA DRUM PANEL 2.6.1 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+desc:NH4X Volca Drum Panel
+// VOLCA DRUM PANEL 2.6.2 by NH4X - editor + display for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
 // SETUP
-//  1. Install via ReaPack (repository above), then add "JS: Volca Drum Panel" to a track.
-//     With the Volca Drum Sequencer: sequencer FIRST, panel after it on the same track.
+//  1. Install via ReaPack (repository above), then add "JS: NH4X Volca Drum Panel" to a track.
+//     With the NH4X Volca Drum Sequencer: sequencer FIRST, panel after it on the same track.
 //  2. Track: MIDI hardware output = the port your volca drum is connected to (send to original channels).
 //  3. Volca: split channel mode (part 1-6 = MIDI channel 1-6, see the Korg manual). Waveguide CCs go out on channel 1.
 //  4. FILT and CLIP (purple row names) need the custom firmware "vdcf" 1.22 by hj-oja (CC 54/55);
@@ -1083,7 +1083,7 @@ loop(6,
   );
   i += 1;
 );
-// share current values, CC numbers and channels with the Volca Drum Sequencer (p-locks, 2026-11-04):
+// share current values, CC numbers and channels with the NH4X Volca Drum Sequencer (p-locks, 2026-11-04):
 // gmem[1000 + n] = value of slider n, [1200 + n] = CC, [1400 + n] = channel 0-5, [999] = 1 (panel present)
 pl_i = 1; loop(NS, gmem[1000 + pl_i] = last[pl_i]; gmem[1200 + pl_i] = cc[pl_i]; gmem[1400 + pl_i] = chn[pl_i]; pl_i += 1;);
 pl_i = 0; loop(6, gmem[1720 + pl_i] = slider(138 + pl_i) >= 0.5; pl_i += 1;);   // v1.5.5: LINK L1+L2 per part for the sequencer's p-locks
@@ -1439,7 +1439,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   // title block
   gfx_setfont(1, "Bahnschrift", floor(S(20) * 1.2 + 0.5), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(2));
   gfx_setfont(3, "Bahnschrift", floor(S(12) * 1.2 + 0.5), 'b'); rc(K_ACC, 1); txt("P A N E L", MG + S(1), MG + S(29));
-  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v2.6.1 · classic", MG + S(1), MG + S(47));   // bump on every change
+  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v2.6.2 · classic", MG + S(1), MG + S(47));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch (accent color), like the sequencer; hover = name in the readout
   rc(K_LBL, 0.8); frame(LKBX, LKBY, LCW, LKBH); gfx_rect(LKBX + S(3), LKBY + S(3), (LCW - S(6)) / 2, LKBH - S(6));
   rc(K_ACC, 1); gfx_rect(CLBX + S(2), CLBY + S(2), LCW - S(4), LKBH - S(4)); rc(K_LBL, 0.8); frame(CLBX, CLBY, LCW, LKBH);
@@ -1462,7 +1462,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   rc(K_PLY, 1); gfx_rect(0, 0, TTW, HDH);
   gfx_setfont(1, #sf, S(32), sfb); rc(K_BG2, 1); txt("VOLCA", S(12), S(2)); txt("DRUM", S(12), S(28));
   sfontb(3, S(11)); txt("P A N E L", S(13), S(58));
-  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v2.6.1 · sleeve", S(13), S(72));   // bump on every change
+  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v2.6.2 · sleeve", S(13), S(72));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch
   rc(K_BG2, 0.8); frame2(LKBX, LKBY, LCW, LKBH, S(2)); gfx_rect(LKBX + S(4), LKBY + S(4), (LCW - S(8)) / 2, LKBH - S(8));
   rc(K_BG2, 1); gfx_rect(CLBX, CLBY, LCW, LKBH); rc(K_ACC, 1); gfx_rect(CLBX + S(3), CLBY + S(3), LCW - S(6), LKBH - S(6));
@@ -1893,7 +1893,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfontb(4, S(20)
   gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
   rc(K_TXT, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
   gfx_setfont(4, "Bahnschrift", S(12), 'b');
-  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v2.6.1", wx + S(9), gfx_h - MG - S(16));
+  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v2.6.2", wx + S(9), gfx_h - MG - S(16));
 ) : (
   // Sleeve: section heads with a thick rule, flat rows (bigger text, the column has room)
   SLW = S(62);   // label column
@@ -1964,7 +1964,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfontb(4, S(20)
   sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("A-B", rdx, moy + (moh - th) / 2);
   rc(K_BAR, 0.6); gfx_rect(mox, moy, max(1, mm * mow), moh);
   sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th); rtxt(20, mox + mow - S(4), moy + (moh - th) / 2);
-  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v2.6.1", wx, gfx_h - MG - S(14));
+  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v2.6.2", wx, gfx_h - MG - S(14));
 );
 
 // ---- mouse ----

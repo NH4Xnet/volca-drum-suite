@@ -1,11 +1,11 @@
-desc:Volca Drum Sequencer
-// VOLCA DRUM SEQUENCER 1.1.5 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
+desc:NH4X Volca Drum Sequencer
+// VOLCA DRUM SEQUENCER 1.1.6 by NH4X - step sequencer for the Korg volca drum, as one JSFX.
 // Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
 // SETUP
 //  1. Install via ReaPack (repository above). Track with the volca's MIDI hardware output:
-//     "JS: Volca Drum Sequencer" FIRST, then "JS: Volca Drum Panel" after it. The order matters:
+//     "JS: NH4X Volca Drum Sequencer" FIRST, then "JS: NH4X Volca Drum Panel" after it. The order matters:
 //     the sequencer sends notes 65/67/69/71/72/74 on channel 1, the panel turns them into part 1-6 (channel 1-6)
 //     and gives the sequencer its sound values for p-locks.
 //  2. Volca: split channel mode, firmware vdcf 1.22 by hj-oja recommended (velocity 63 = panel LEVEL, below = ghost,
@@ -426,6 +426,7 @@ function lks(p, k) ( lnk(p) && k < 14 ? k % 7 : k; );
 // v1.1.2 (2026-11-15): no "~" on ATT / REL times (calibration run 3: EG types have the same length)
 // v1.1.3 (2026-11-15): mouse gaps filled: right-click lists on HUM, EUCLID HITS, GEN AMOUNT, INTENSITY, ACCENT AMT, BPM, length strip, P-LOCK PARAM;
 //   Alt = default on GEN AMOUNT / WHAT, EVOLVE CHANGES, BPM, length strip; double-click INTENSITY = 50; CAL right-click = menu (no silent reset), Alt+click CAL = 0 ms.
+// v1.1.6 (2026-11-18): public FX name "NH4X Volca Drum Sequencer" (set by the release build); no code change.
 // v1.1.5 (2026-11-17): Sleeve fonts like the Drum Sequencer v0.10: text = Bahnschrift SemiBold SemiCondensed (sfont, TFK 1.1), Big Shoulders only for
 //   title, header buttons + values, pattern number, big part numbers, velocity / STEP values, mode tabs, TRIGLESS (sfontb); letter spacing only on header
 //   buttons, mode tabs, TRIGLESS (SPC); STEP-tab hint lines dropped in Sleeve (the tooltips say the same).
@@ -1964,7 +1965,7 @@ function tipdesc(h) local(f) (   // v0.55.2: only tips that add something to the
 // ---- KIT tab (v0.52): one pattern's kit ----
 function ksend(k) (
   !kithas(k) ? sprintf(#rd, "PATTERN %02d HAS NO KIT", k + 1)
-  : !pnl ? strcpy(#rd, "KIT · NO PANEL FOUND (Volca Drum Panel after the sequencer)")
+  : !pnl ? strcpy(#rd, "KIT · NO PANEL FOUND (NH4X Volca Drum Panel after the sequencer)")
   : (kitsend(k); k == curpat ? sprintf(#rd, "REVERTED · panel back to the kit of PATTERN %02d", k + 1)
                              : sprintf(#rd, "KIT OF PATTERN %02d ON THE PANEL · until the next pattern switch", k + 1););
   msgt = now;
@@ -2928,7 +2929,7 @@ press ? (
   ) : hreg >= 70 && hreg <= 81 ? (
     toolpress(hreg - 70);
   ) : hreg == 97 ? (
-    !pnl ? strcpy(#rd, "KIT · NO PANEL FOUND (Volca Drum Panel after the sequencer)") : (
+    !pnl ? strcpy(#rd, "KIT · NO PANEL FOUND (NH4X Volca Drum Panel after the sequencer)") : (
       kj_ = 0; loop(136, KITB[curpat * 140 + kj_] = floor(gmem[1001 + kj_] + 0.5); kj_ += 1;); KITB[curpat * 140 + 136] = 1;
       sprintf(#rd, "KIT GRABBED · PATTERN %d keeps this panel sound", curpat + 1); bump();
     ); msgt = now;
@@ -3412,7 +3413,7 @@ gfx_gradrect(0, 0, gfx_w, gfx_h, bg_r, bg_g, bg_b, 1, 0, 0, 0, 0, (gfx_r - bg_r)
 // ---- title + theme ----
 gfx_setfont(1, "Bahnschrift", CF(S(26)), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(6));
 gfx_setfont(3, "Bahnschrift", CF(S(13)), 'b'); rc(K_ACC, 1); txt("S E Q U E N C E R", MG + S(1), MG + S(36));
-gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.1.5 · classic", MG + S(1), MG + S(54));   // bump on every change
+gfx_setfont(5, "Consolas", CF(S(10))); rc(K_DIM, 1); txt("v1.1.6 · classic", MG + S(1), MG + S(54));   // bump on every change
 
 // ---- readout ----
 rc(K_RDB, 1); gfx_rect(RDX, MG, RDW, HDH);
@@ -3869,7 +3870,7 @@ skin ? (
   rc(K_BG2, 1);
   gfx_setfont(1, #sf, S(36), 'b'); txt("VOLCA", S(16), HDY + S(4)); txt("DRUM", S(16), HDY + S(34));
   sfontb(3, S(14)); slcur_ = 0; txt("S E Q U E N C E R", S(17), HDY + S(68));
-  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.1.5 · sleeve", S(17), HDY + S(86));   // bump on every change
+  gfx_setfont(5, #sf, S(14)); rc(K_BG2, 0.7); txt("v1.1.6 · sleeve", S(17), HDY + S(86));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch in the title block, like Classic; hover = name in the status
   rc(K_BG2, lkhit ? 1 : 0.75); frame2(LKX, THY, LKW, THH, S(2)); gfx_rect(LKX + S(4), THY + S(4), (LKW - S(8)) / 2, THH - S(8));
   rc(K_BG2, 1); gfx_rect(THX, THY, THW, THH); rc(K_ACC, 1); gfx_rect(THX + S(3), THY + S(3), THW - S(6), THH - S(6));
