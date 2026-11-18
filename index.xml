@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <index version="1" name="NH4X Volca Drum Suite">
   <category name="Volca Drum">
-    <reapack name="Volca Drum Panel.jsfx" type="effect" desc="Volca Drum Panel (Korg volca drum editor)">
+    <reapack name="Volca Drum Panel.jsfx" type="effect" desc="NH4X Volca Drum Panel (Korg volca drum editor)">
       <metadata>
         <link rel="website" href="https://github.com/NH4Xnet/volca-drum-suite">GitHub / manual</link>
         <link rel="website" href="https://nh4x.bandcamp.com/">NH4X music</link>
@@ -78,7 +78,7 @@ New instances start in the Sleeve look with the Sleeve red colors (existing proj
 Select rows as parameters: sliders 160-195 = SRC / MOD.T / EG.T of each part and layer. They follow the panel; moving one changes only its own part of the Select CC (for MIDI controllers and automation).]]></changelog>
       </version>
     </reapack>
-    <reapack name="Volca Drum Sequencer.jsfx" type="effect" desc="Volca Drum Sequencer (step sequencer for the Korg volca drum)">
+    <reapack name="Volca Drum Sequencer.jsfx" type="effect" desc="NH4X Volca Drum Sequencer (step sequencer for the Korg volca drum)">
       <metadata>
         <link rel="website" href="https://github.com/NH4Xnet/volca-drum-suite">GitHub / manual</link>
         <link rel="website" href="https://nh4x.bandcamp.com/">NH4X music</link>

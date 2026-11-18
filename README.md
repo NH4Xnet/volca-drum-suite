@@ -92,6 +92,8 @@ ReaPack is the free package manager for REAPER. Already have it? Go to step 2.
 https://github.com/NH4Xnet/volca-drum-suite/raw/main/index.xml
 ```
 
+Or add **NH4X REAPER Tools** instead: it lists this suite plus the other NH4X tools (https://github.com/NH4Xnet/reaper-tools). Add only one of the two, so the plugins aren't installed twice.
+
 <p align="center">
   <a href="install/2-import-repository.png"><img src="install/2-import-repository.png" width="440" alt="Import repositories dialog with the URL pasted"></a>
 </p>
